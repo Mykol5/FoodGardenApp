@@ -28,7 +28,7 @@ jobs:
         run: flutter precache
 
       - name: Build release APK
-        run: flutter build apk --release --no-sound-null-safety
+        run: flutter build apk --release
 
       - name: List APK files
         run: find build/app/outputs -name "*.apk" -type f
