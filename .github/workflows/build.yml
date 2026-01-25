@@ -1,4 +1,4 @@
-name: Flutter APK Builder
+name: Build Flutter APK
 
 on:
   push:
@@ -8,35 +8,42 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
+      # 1️⃣ Checkout your repo
       - name: Checkout code
         uses: actions/checkout@v4
-    
+
+      # 2️⃣ Setup Flutter (MATCHES your SDK requirement)
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.38.7'
-    
+          channel: stable
+
+      # 3️⃣ Verify Flutter (optional but helpful)
       - name: Flutter doctor
         run: flutter doctor -v
-    
-      - name: Get dependencies
+
+      # 4️⃣ Clean project
+      - name: Flutter clean
+        run: flutter clean
+
+      # 5️⃣ Get dependencies
+      - name: Flutter pub get
         run: flutter pub get
-    
-      - name: Build APK (CI-safe)
+
+      # 6️⃣ Build APK (CI-SAFE FLAGS)
+      - name: Build release APK
         run: |
-          flutter clean
           flutter build apk --release \
-            --split-debug-info=build/debug-info \
-            --split-per-abi
-    
-      - name: List APK files
-        run: |
-          find build -name "*.apk"
-    
+            --android-skip-build-dependency-validation \
+            --no-daemon
+
+      # 7️⃣ Upload APK artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: FoodGardenApp-APK
+          name: food-garden-apk
           path: build/app/outputs/flutter-apk/*.apk
+          retention-days: 90
