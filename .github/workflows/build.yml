@@ -9,44 +9,41 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      # Prevent Flutter from watching files (fix CI crash)
-      DART_VM_OPTIONS: --disable-dart-dev
-      FLUTTER_SUPPRESS_ANALYTICS: true
-
     steps:
-      # Step 1: Checkout your repo
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      # Step 2: Setup Flutter
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.38.7'
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.38.7'  # Match the version your project requires
 
-      # Step 3: Get dependencies
-      - name: Get dependencies
-        run: flutter pub get
+    - name: Navigate to project directory
+      run: cd ./FoodGardenApp  # <-- Replace with the folder that has your pubspec.yaml
 
-      # Step 4: Build release APK
-      - name: Build APK (release)
-        run: |
-          flutter clean
-          flutter build apk --release --android-skip-build-dependency-validation --no-pub
+    - name: Get dependencies
+      run: flutter pub get
 
-      # Step 5: List generated APKs
-      - name: List APKs
-        run: |
-          echo "=== Searching for APK files ==="
-          find build/app/outputs/flutter-apk/ -name "*.apk" -type f || echo "No APKs found"
-          ls -la build/app/outputs/flutter-apk/
+    - name: Clean previous builds
+      run: flutter clean
 
-      # Step 6: Upload APK as artifact
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: flutter-apk
-          path: build/app/outputs/flutter-apk/**/*.apk
-          retention-days: 90
-          if-no-files-found: error
+    - name: Build APK
+      run: flutter build apk --release --android-skip-build-dependency-validation
+      env:
+        DART_VM_OPTIONS: --disable-dart-dev
+        FLUTTER_SUPPRESS_ANALYTICS: true
+
+    - name: List APK files
+      run: |
+        echo "=== Searching for APK files ==="
+        find ./FoodGardenApp/build/app/outputs -name "*.apk" -type f || echo "No APK files found"
+        echo "=== Build directory structure ==="
+        ls -la ./FoodGardenApp/build/app/outputs || echo "No outputs directory"
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: flutter-apk
+        path: ./FoodGardenApp/build/app/outputs/**/*.apk
+        retention-days: 90
+        if-no-files-found: error
