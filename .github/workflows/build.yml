@@ -10,40 +10,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # 1. Checkout the repo
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # 2. Setup Flutter
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.38.7'  # Match the version your project requires
+        flutter-version: '3.38.7'  # matches your Flutter SDK
+        channel: stable
 
-    - name: Navigate to project directory
-      run: cd ./FoodGardenApp  # <-- Replace with the folder that has your pubspec.yaml
-
+    # 3. Get Flutter dependencies
     - name: Get dependencies
       run: flutter pub get
 
-    - name: Clean previous builds
+    # 4. Clean any previous builds
+    - name: Clean build
       run: flutter clean
 
+    # 5. Build the release APK
     - name: Build APK
       run: flutter build apk --release --android-skip-build-dependency-validation
-      env:
-        DART_VM_OPTIONS: --disable-dart-dev
-        FLUTTER_SUPPRESS_ANALYTICS: true
 
+    # 6. List APK files for debugging (optional but useful)
     - name: List APK files
       run: |
         echo "=== Searching for APK files ==="
-        find ./FoodGardenApp/build/app/outputs -name "*.apk" -type f || echo "No APK files found"
+        find ./build/app/outputs -name "*.apk" -type f || echo "No APK files found"
         echo "=== Build directory structure ==="
-        ls -la ./FoodGardenApp/build/app/outputs || echo "No outputs directory"
+        ls -la build/app/outputs || echo "No outputs directory"
 
-    - name: Upload APK artifact
+    # 7. Upload APK artifact
+    - name: Upload APK files
       uses: actions/upload-artifact@v4
       with:
         name: flutter-apk
-        path: ./FoodGardenApp/build/app/outputs/**/*.apk
+        path: ./build/app/outputs/**/*.apk
         retention-days: 90
         if-no-files-found: error
