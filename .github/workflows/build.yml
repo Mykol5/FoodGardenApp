@@ -1,40 +1,46 @@
-name: Flutter APK Builder
+name: Flutter APK Build
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      # 1️⃣ Checkout the repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
+      # 2️⃣ Set up Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.38.7'
+          flutter-version: '3.38.7' # Match your local Flutter version
 
-      - name: Install dependencies
+      # 3️⃣ Install dependencies
+      - name: Get Flutter packages
         run: flutter pub get
 
-      - name: Clean previous builds
+      # 4️⃣ Clean old builds
+      - name: Clean project
         run: flutter clean
 
-      - name: Pre-cache Flutter artifacts
+      # 5️⃣ Precache Flutter artifacts
+      - name: Precache Flutter
         run: flutter precache
 
-      - name: Build release APK
+      # 6️⃣ Build APK
+      - name: Build APK (Release)
         run: flutter build apk --release
+        working-directory: ./ # Make sure this points to your Flutter root
 
-      - name: List APK files
-        run: find build/app/outputs -name "*.apk" -type f
-
-      - name: Upload APK artifacts
-        uses: actions/upload-artifact@v4
+      # 7️⃣ Upload APK as artifact
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
         with:
-          name: flutter-apk
-          path: build/app/outputs/**/*.apk
+          name: app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
