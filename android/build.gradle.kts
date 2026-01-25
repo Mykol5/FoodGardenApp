@@ -1,11 +1,11 @@
-// android/build.gradle.kts
-allprojects {
+buildscript {
+    ext.kotlin_version = '2.1.0'
     repositories {
         google()
         mavenCentral()
     }
-}
-
-tasks.register<Delete>("clean") {
-    delete(rootProject.layout.buildDirectory)
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.6.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
 }
