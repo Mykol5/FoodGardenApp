@@ -1,39 +1,69 @@
-name: Build Flutter APK
+name: Flutter APK Builder
 
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    env:
-      CI: true
-      DART_VM_OPTIONS: "--disable-dart-dev-file-watcher"
-      GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-
+    
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.38.7'
-          channel: stable
-
-      - name: Clean project
-        run: flutter clean
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Build APK (single run)
-        run: flutter build apk --release --android-skip-build-dependency-validation --no-pub
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: food-garden-apk
-          path: build/app/outputs/flutter-apk/*.apk
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.38.5'
+    
+    - name: Fix Android project
+      run: |
+        echo "=== Fixing Android project ==="
+        cd android
+        
+        # Update Gradle wrapper
+        sed -i 's/gradle-8.4-all.zip/gradle-8.7-all.zip/' gradle/wrapper/gradle-wrapper.properties
+        
+        # Update build.gradle
+        if grep -q "com.android.tools.build:gradle" build.gradle; then
+          sed -i 's/com.android.tools.build:gradle:[0-9.]*/com.android.tools.build:gradle:8.6.0/' build.gradle
+        else
+          echo "buildscript {
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.6.0'
+                classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0'
+            }
+          }" > build.gradle
+        fi
+        
+        # Update settings.gradle for new Flutter projects
+        if [ -f settings.gradle.kts ]; then
+          sed -i "s/androidGradlePlugin = \".*\"/androidGradlePlugin = \"8.6.0\"/" settings.gradle.kts
+          sed -i "s/kotlinVersion = \".*\"/kotlinVersion = \"2.1.0\"/" settings.gradle.kts
+        fi
+        
+        echo "Fixed Android configuration"
+    
+    - name: Build APK with direct Gradle
+      run: |
+        echo "=== Building APK directly with Gradle ==="
+        cd android
+        chmod +x gradlew
+        ./gradlew clean
+        ./gradlew assembleRelease
+        
+        echo "=== Looking for APK files ==="
+        find . -name "*.apk" -type f | head -20 || echo "No APK found with find"
+        ls -la app/build/outputs/apk/ || echo "No apk directory"
+        ls -la app/build/outputs/ || echo "No outputs directory"
+    
+    - name: Upload ANY found APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-apk
+        path: |
+          android/app/build/outputs/apk/**/*.apk
+          android/app/build/outputs/flutter-apk/**/*.apk
+          build/**/*.apk
+          **/*.apk
+        if-no-files-found: warn
+        retention-days: 90
