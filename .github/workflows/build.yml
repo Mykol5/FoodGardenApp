@@ -1,36 +1,49 @@
-name: Build Flutter APK
+name: Flutter APK Builder
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.38.5'
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build APK
-        run: |
-          flutter build apk --release
-          echo "Build completed. Listing APK files:"
-          find . -name "*.apk" -type f | head -20
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: flutter-apk
-          path: |
-            build/app/outputs/apk/release/*.apk
-            build/app/outputs/flutter-apk/*.apk
-          retention-days: 90
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.38.5'
+    
+    - name: Get dependencies
+      run: flutter pub get
+    
+    - name: Build APK with correct flags
+      run: |
+        flutter build apk --release \
+          --no-tree-shake-icons \
+          --split-per-abi \
+          --android-skip-build-dependency-validation
+    
+    - name: Find and list APK files
+      run: |
+        echo "=== Searching for APK files ==="
+        find . -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
+        echo "=== Build directory structure ==="
+        ls -la build/app/outputs/ || echo "No outputs directory"
+        ls -la build/app/outputs/apk/ 2>/dev/null || echo "No apk directory"
+        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "No flutter-apk directory"
+    
+    - name: Upload ALL APK files
+      uses: actions/upload-artifact@v4
+      with:
+        name: flutter-apk
+        path: |
+          build/app/outputs/apk/**/*.apk
+          build/app/outputs/flutter-apk/**/*.apk
+          build/**/*.apk
+        retention-days: 90
+        if-no-files-found: error
