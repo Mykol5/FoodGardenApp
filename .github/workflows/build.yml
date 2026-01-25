@@ -9,8 +9,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      CI: true
+      DART_VM_OPTIONS: "--disable-dart-dev-file-watcher"
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Setup Flutter
@@ -22,18 +27,17 @@ jobs:
       - name: Flutter doctor
         run: flutter doctor -v
 
-      - name: Flutter clean
+      - name: Clean
         run: flutter clean
 
-      - name: Flutter pub get
+      - name: Get dependencies
         run: flutter pub get
 
       - name: Build release APK
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.daemon=false"
         run: |
           flutter build apk --release \
-            --android-skip-build-dependency-validation
+            --android-skip-build-dependency-validation \
+            --no-pub
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
