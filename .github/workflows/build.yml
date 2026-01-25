@@ -38,7 +38,7 @@ jobs:
         run: flutter build apk --release
         working-directory: ./ # Make sure this points to your Flutter root
 
-      # 7️⃣ Upload APK as artifact
+      # 7️⃣ Upload APK as artifact yes
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
