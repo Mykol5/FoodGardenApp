@@ -15,8 +15,7 @@ jobs:
       GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -24,24 +23,17 @@ jobs:
           flutter-version: '3.38.7'
           channel: stable
 
-      - name: Flutter doctor
-        run: flutter doctor -v
-
-      - name: Clean
+      - name: Clean project
         run: flutter clean
 
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Build release APK
-        run: |
-          flutter build apk --release \
-            --android-skip-build-dependency-validation \
-            --no-pub
+      - name: Build APK (single run)
+        run: flutter build apk --release --android-skip-build-dependency-validation --no-pub
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: food-garden-apk
           path: build/app/outputs/flutter-apk/*.apk
-          retention-days: 90
