@@ -10,42 +10,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # 2. Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.38.7'
-          channel: stable
 
-      # 3. Enable flutter caching
-      - name: Flutter pub get
+      - name: Install dependencies
         run: flutter pub get
 
-      # 4. Clean previous builds
-      - name: Flutter clean
+      - name: Clean previous builds
         run: flutter clean
 
-      # 5. Pre-cache Flutter artifacts
       - name: Pre-cache Flutter artifacts
         run: flutter precache
 
-      # 6. Build release APK per ABI
-      - name: Build APK (split per ABI)
-        run: flutter build apk --release --split-per-abi
+      - name: Build release APK
+        run: flutter build apk --release --no-sound-null-safety
 
-      # 7. List APK files (debugging)
       - name: List APK files
         run: find build/app/outputs -name "*.apk" -type f
 
-      # 8. Upload APKs
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
           name: flutter-apk
           path: build/app/outputs/**/*.apk
-          retention-days: 90
-          if-no-files-found: error
