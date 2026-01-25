@@ -1,35 +1,42 @@
-name: Flutter Android Build
+name: Flutter APK Builder
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
+    
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'stable'
-
-      - name: Flutter Doctor
-        run: flutter doctor
-
+          flutter-version: '3.19.6'   # ✅ use a real version
+    
+      - name: Flutter doctor
+        run: flutter doctor -v
+    
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Build APK
+    
+      - name: Build APK (CI-safe)
         run: |
           flutter clean
-          flutter build apk --release --split-debug-info=build/debug-info
-
+          flutter build apk --release \
+            --split-debug-info=build/debug-info \
+            --split-per-abi
+    
+      - name: List APK files
+        run: |
+          find build -name "*.apk"
+    
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: FoodGardenApp-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/*.apk
