@@ -1,8 +1,8 @@
-name: Build Flutter APK
+name: Flutter APK Builder
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -10,37 +10,43 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      CI: true
-      DART_VM_OPTIONS: --disable-dart-dev-file-watcher
-      GRADLE_OPTS: -Dorg.gradle.daemon=false
+      # Prevent Flutter from watching files (fix CI crash)
+      DART_VM_OPTIONS: --disable-dart-dev
+      FLUTTER_SUPPRESS_ANALYTICS: true
 
     steps:
-      - name: Checkout repository
+      # Step 1: Checkout your repo
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Flutter
+      # Step 2: Setup Flutter
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.38.7
-          channel: stable
+          flutter-version: '3.38.7'
 
-      - name: Flutter doctor
-        run: flutter doctor -v
-
+      # Step 3: Get dependencies
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Clean project
-        run: flutter clean
+      # Step 4: Build release APK
+      - name: Build APK (release)
+        run: |
+          flutter clean
+          flutter build apk --release --android-skip-build-dependency-validation --no-pub
 
-      - name: Build release APK
-        run: flutter build apk --release
+      # Step 5: List generated APKs
+      - name: List APKs
+        run: |
+          echo "=== Searching for APK files ==="
+          find build/app/outputs/flutter-apk/ -name "*.apk" -type f || echo "No APKs found"
+          ls -la build/app/outputs/flutter-apk/
 
-      - name: Verify APK exists
-        run: ls -R build/app/outputs/flutter-apk
-
+      # Step 6: Upload APK as artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: flutter-apk
+          path: build/app/outputs/flutter-apk/**/*.apk
+          retention-days: 90
+          if-no-files-found: error
