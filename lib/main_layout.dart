@@ -1,5 +1,10 @@
 // lib/screens/main_layout.dart
 import 'package:flutter/material.dart';
+import 'home_screen.dart';
+import 'garden_screen.dart';
+import 'share_screen.dart';
+import 'guides_screen.dart';
+import 'profile_screen.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
