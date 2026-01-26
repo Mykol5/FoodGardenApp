@@ -1,7 +1,45 @@
-// lib/screens/splash_screen.dart
+// main.dart - This file contains BOTH the main() function AND SplashScreen
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
+import 'login_screen.dart'; // Make sure you have this file
 
+// Main entry point - REQUIRED by Flutter
+void main() {
+  runApp(const MyApp());
+}
+
+// Main app widget
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Harvest Hub',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primaryColor: const Color(0xFF39AC86),
+        scaffoldBackgroundColor: const Color(0xFFF9F8F6),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF39AC86),
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        primaryColor: const Color(0xFF39AC86),
+        scaffoldBackgroundColor: const Color(0xFF212C28),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF39AC86),
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      home: const SplashScreen(), // Set SplashScreen as home
+    );
+  }
+}
+
+// Splash Screen Widget
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -271,7 +309,6 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-
 
 
 
