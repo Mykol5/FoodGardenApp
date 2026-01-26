@@ -77,7 +77,7 @@ class _SplashScreenState extends State<SplashScreen> {
         ),
         child: Stack(
           children: [
-            // Status Bar Placeholder - FIXED position
+            // Status Bar Placeholder
             const Positioned(
               top: 40,
               left: 0,
@@ -85,130 +85,131 @@ class _SplashScreenState extends State<SplashScreen> {
               child: SizedBox(height: 40),
             ),
 
-            // Main Content - PROPERLY POSITIONED
-            Positioned(
-              top: 100, // Fixed position from top
-              left: 0,
-              right: 0,
-              bottom: 180, // Leave space for bottom section
+            // MAIN CONTENT - Properly centered
+            Center(
               child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Custom Logo from HTML
-                    Container(
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Outer glow
-                          Container(
-                            width: 200,
-                            height: 200,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF39AC86).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                          ),
-
-                          // White circle with shadow
-                          Container(
-                            padding: const EdgeInsets.all(40),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(100),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF39AC86).withOpacity(0.2),
-                                  blurRadius: 30,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Container(
-                              width: 128,
-                              height: 128,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo
+                      Container(
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Outer glow
+                            Container(
+                              width: 200,
+                              height: 200,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(64),
-                                border: Border.all(
-                                  color: const Color(0xFF39AC86).withOpacity(0.3),
-                                  width: 6,
+                                color: const Color(0xFF39AC86).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                            ),
+                            // White circle with shadow
+                            Container(
+                              padding: const EdgeInsets.all(40),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(100),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF39AC86).withOpacity(0.2),
+                                    blurRadius: 30,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Container(
+                                width: 128,
+                                height: 128,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(64),
+                                  border: Border.all(
+                                    color: const Color(0xFF39AC86).withOpacity(0.3),
+                                    width: 6,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Container(
+                                    width: 96,
+                                    height: 96,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(48),
+                                      border: Border.all(
+                                        color: const Color(0xFF39AC86).withOpacity(0.2),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.eco,
+                                        size: 80,
+                                        color: Color(0xFF39AC86),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
-                              child: Center(
-                                child: Container(
-                                  width: 96,
-                                  height: 96,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(48),
-                                    border: Border.all(
-                                      color: const Color(0xFF39AC86).withOpacity(0.2),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.eco,
-                                      size: 80,
-                                      color: Color(0xFF39AC86),
-                                    ),
-                                  ),
-                                ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // Title and Tagline - PROPERLY CENTERED
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Harvest Hub',
+                            style: TextStyle(
+                              color: Color(0xFF39AC86),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 3,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Grow, Share,\nSustain',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xFF101816),
+                              fontSize: 42,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
+                              height: 1.1,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: 280,
+                            child: Text(
+                              'Nurturing communities through mindful eating and garden tracking.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: const Color(0xFF101816).withOpacity(0.6),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                                height: 1.5,
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-
-                    const SizedBox(height: 40), // Increased spacing
-
-                    // App Name & Tagline - HTML Style
-                    Column(
-                      children: [
-                        const Text(
-                          'Harvest Hub',
-                          style: TextStyle(
-                            color: Color(0xFF39AC86),
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 3,
-                          ),
-                        ),
-                        const SizedBox(height: 16), // Increased spacing
-                        const Text(
-                          'Grow, Share, Sustain',
-                          style: TextStyle(
-                            color: Color(0xFF101816),
-                            fontSize: 42,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.5,
-                            height: 1,
-                          ),
-                        ),
-                        const SizedBox(height: 20), // Increased spacing
-                        SizedBox(
-                          width: 280,
-                          child: Text(
-                            'Nurturing communities through mindful eating and garden tracking.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: const Color(0xFF101816).withOpacity(0.6),
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
 
-            // Bottom Section with Progress - FIXED position
+            // Bottom Section - Fixed at bottom
             Positioned(
-              bottom: 100, // Fixed position from bottom
+              bottom: 100,
               left: 0,
               right: 0,
               child: Column(
@@ -222,7 +223,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(height: 16), // Increased spacing
+                  const SizedBox(height: 16),
                   Container(
                     width: 320,
                     height: 6,
@@ -234,7 +235,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Container(
-                        width: 120, // 45% of 320px
+                        width: 120,
                         height: 6,
                         decoration: BoxDecoration(
                           color: const Color(0xFF39AC86),
@@ -249,7 +250,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 40), // Increased spacing
+                  const SizedBox(height: 40),
                   Text(
                     'VERSION 1.0.10',
                     style: TextStyle(
@@ -288,7 +289,6 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-
 
 
 
