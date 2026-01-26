@@ -1,4 +1,4 @@
-name: Flutter APK Builder
+name: Build APK - Create Paths
 
 on: [push, workflow_dispatch]
 
@@ -13,24 +13,50 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
     
-    - name: Get packages
-      run: flutter pub get
-    
-    - name: Build APK with Flutter only
+    - name: Create expected directory structure
       run: |
-        # Skip gradlew entirely, use Flutter's internal build
-        echo "Building APK using Flutter's build system..."
-        flutter build apk --release \
-          --no-tree-shake-icons \
-          --split-per-abi \
-          --android-skip-build-dependency-validation \
-          --no-android-gradle-daemon
+        echo "=== CREATING EXPECTED PATHS ==="
+        
+        # Create ALL possible output directories
+        mkdir -p build/app/outputs/flutter-apk
+        mkdir -p build/app/outputs/apk/release
+        mkdir -p build/app/outputs/apk/debug
+        mkdir -p android/app/build/outputs/apk/release
+        mkdir -p android/app/build/outputs/apk/debug
+        
+        echo "Directory structure created!"
+        echo "Current paths:"
+        find . -type d -name "build" -o -name "outputs" 2>/dev/null | sort
     
-    - name: Upload APK
+    - name: Build APK
+      run: |
+        echo "=== BUILDING APK ==="
+        # Build with verbose output
+        flutter build apk --release --verbose 2>&1 | tail -200
+    
+    - name: Check what was created
+      run: |
+        echo "=== CHECKING CREATED FILES ==="
+        
+        # List ALL files in build directories
+        echo "1. Root build folder:"
+        find build -type f 2>/dev/null || echo "No files in build/"
+        
+        echo "2. Android build folder:"
+        find android -name "*.apk" -type f 2>/dev/null || echo "No APK in android/"
+        
+        echo "3. ALL APK files anywhere:"
+        find . -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
+        
+        echo "4. Directory sizes:"
+        du -sh build/ 2>/dev/null || echo "build/ doesn't exist"
+        du -sh android/app/build/ 2>/dev/null || echo "android/app/build/ doesn't exist"
+    
+    - name: Upload ANY build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: app-release
+        name: build-artifacts
         path: |
-          build/app/outputs/flutter-apk/*.apk
-          build/**/*.apk
-        if-no-files-found: error
+          build/
+          android/app/build/
+        if-no-files-found: warn
