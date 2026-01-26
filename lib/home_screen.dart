@@ -8,7 +8,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
   final _searchController = TextEditingController();
   
   final List<String> categories = ['All', 'Vegetables', 'Fruits', 'Herbs', 'Flowers'];
@@ -289,74 +288,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-      
-      // Floating Action Button
-      floatingActionButton: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: const Color(0xFF39AC86),
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF39AC86).withOpacity(0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 32,
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      
-      // Bottom Navigation Bar
-      bottomNavigationBar: Container(
-        height: 80,
-        decoration: BoxDecoration(
-          color: isDarkMode 
-              ? const Color(0xFF212C28).withOpacity(0.95)
-              : Colors.white.withOpacity(0.95),
-          border: Border(
-            top: BorderSide(
-              color: isDarkMode ? const Color(0xFF3A4A44) : const Color(0xFFE5E7EB),
-            ),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildBottomNavItem(
-              icon: Icons.home,
-              label: 'Home',
-              isSelected: _selectedIndex == 0,
-            ),
-            _buildBottomNavItem(
-              icon: Icons.eco,
-              label: 'Garden',
-              isSelected: _selectedIndex == 1,
-            ),
-            _buildBottomNavItem(
-              icon: Icons.handshake,
-              label: 'Share',
-              isSelected: _selectedIndex == 2,
-            ),
-            _buildBottomNavItem(
-              icon: Icons.menu_book,
-              label: 'Guides',
-              isSelected: _selectedIndex == 3,
-            ),
-            _buildBottomNavItem(
-              icon: Icons.person,
-              label: 'Profile',
-              isSelected: _selectedIndex == 4,
             ),
           ],
         ),
@@ -656,49 +587,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-  }) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedIndex = label == 'Home' ? 0 : 
-                         label == 'Garden' ? 1 : 
-                         label == 'Share' ? 2 : 
-                         label == 'Guides' ? 3 : 4;
-        });
-      },
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: isSelected 
-                ? const Color(0xFF39AC86)
-                : (isDarkMode ? const Color(0xFF5C8A7A) : const Color(0xFF5C8A7A)),
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1,
-              color: isSelected 
-                  ? const Color(0xFF39AC86)
-                  : (isDarkMode ? const Color(0xFF5C8A7A) : const Color(0xFF5C8A7A)),
             ),
           ),
         ],
