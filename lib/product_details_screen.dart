@@ -396,10 +396,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                     width: 8,
                                     height: 8,
                                     margin: const EdgeInsets.only(top: -4),
+                                    transform: Matrix4.rotationZ(45 * 3.1415926535 / 180), // Move transform here
                                     decoration: BoxDecoration(
                                       color: const Color(0xFF39AC86),
                                       borderRadius: BorderRadius.circular(1),
-                                      transform: Matrix4.rotationZ(45 * 3.1415926535 / 180),
                                     ),
                                   ),
                                 ],
