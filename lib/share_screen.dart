@@ -112,7 +112,7 @@ class _ShareScreenState extends State<ShareScreen> {
                             border: Border.all(
                               color: const Color(0xFF39AC86).withOpacity(0.3),
                               width: 2,
-                              style: BorderStyle.dashed,
+                              style: BorderStyle.solid,
                             ),
                           ),
                           child: Column(
