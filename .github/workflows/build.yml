@@ -1,59 +1,36 @@
-name: Build Flutter APK
+name: Flutter APK Builder
 
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     
     steps:
-    # 1. Get your code
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v4
     
-    # 2. Setup Flutter
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.38.5'
     
-    # 3. Check if Android project exists
-    - name: Verify Android project
-      run: |
-        echo "Checking project structure..."
-        if [ ! -d "android" ]; then
-          echo "ERROR: No android folder! Your project needs Android setup."
-          echo "You need to run this locally once: flutter create --platforms=android ."
-          exit 1
-        fi
-        
-        if [ ! -f "android/gradlew" ]; then
-          echo "ERROR: gradlew file missing!"
-          echo "Android project is incomplete."
-          exit 1
-        fi
-        
-        echo "Android project looks OK"
-    
-    # 4. Get packages
-    - name: Install dependencies
+    - name: Get packages
       run: flutter pub get
     
-    # 5. Build with NO validation (bypasses all warnings)
-    - name: Build APK
+    - name: Build APK with Flutter only
       run: |
+        # Skip gradlew entirely, use Flutter's internal build
+        echo "Building APK using Flutter's build system..."
         flutter build apk --release \
           --no-tree-shake-icons \
           --split-per-abi \
-          --android-skip-build-dependency-validation
+          --android-skip-build-dependency-validation \
+          --no-android-gradle-daemon
     
-    # 6. Find and upload APK
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: food-garden-app
-        path: build/app/outputs/flutter-apk/*.apk
-        retention-days: 90
+        name: app-release
+        path: |
+          build/app/outputs/flutter-apk/*.apk
+          build/**/*.apk
+        if-no-files-found: error
