@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'home_screen.dart'; 
 
 void main() {
   runApp(const MyApp());
@@ -859,33 +860,33 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 // ==================== HOME SCREEN ====================
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+// class HomeScreen extends StatelessWidget {
+//  const HomeScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Harvest Hub'),
-        backgroundColor: const Color(0xFF39AC86),
-      ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.eco,
-              size: 100,
-              color: Color(0xFF39AC86),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Welcome to Harvest Hub!',
-              style: TextStyle(fontSize: 24),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+//  @override
+//  Widget build(BuildContext context) {
+//    return Scaffold(
+//      appBar: AppBar(
+  //      title: const Text('Harvest Hub'),
+ //       backgroundColor: const Color(0xFF39AC86),
+   //   ),
+  //    body: const Center(
+     //   child: Column(
+     //     mainAxisAlignment: MainAxisAlignment.center,
+      //    children: [
+      //      Icon(
+//              Icons.eco,
+     //         size: 100,
+         //     color: Color(0xFF39AC86),
+   //         ),
+         //   SizedBox(height: 20),
+        //    Text(
+        //      'Welcome to Harvest Hub!',
+        //      style: TextStyle(fontSize: 24),
+      //      ),
+      //    ],
+    //    ),
+      //),
+   // );
+ // }
+//}
