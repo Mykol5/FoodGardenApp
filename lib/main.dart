@@ -1,4 +1,5 @@
 // main.dart - HTML-like splash screen that works
+// main.dart - FIXED arrangement version
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 
@@ -76,7 +77,7 @@ class _SplashScreenState extends State<SplashScreen> {
         ),
         child: Stack(
           children: [
-            // Status Bar Placeholder
+            // Status Bar Placeholder - FIXED position
             const Positioned(
               top: 40,
               left: 0,
@@ -84,124 +85,130 @@ class _SplashScreenState extends State<SplashScreen> {
               child: SizedBox(height: 40),
             ),
 
-            // Main Content - Centered
-            Positioned.fill(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Custom Logo from HTML
-                  Container(
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Outer glow
-                        Container(
-                          width: 200,
-                          height: 200,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF39AC86).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(100),
-                          ),
-                        ),
-
-                        // White circle with shadow
-                        Container(
-                          padding: const EdgeInsets.all(40),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(100),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF39AC86).withOpacity(0.2),
-                                blurRadius: 30,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Container(
-                            width: 128,
-                            height: 128,
+            // Main Content - PROPERLY POSITIONED
+            Positioned(
+              top: 100, // Fixed position from top
+              left: 0,
+              right: 0,
+              bottom: 180, // Leave space for bottom section
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Custom Logo from HTML
+                    Container(
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Outer glow
+                          Container(
+                            width: 200,
+                            height: 200,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(64),
-                              border: Border.all(
-                                color: const Color(0xFF39AC86).withOpacity(0.3),
-                                width: 6,
+                              color: const Color(0xFF39AC86).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                          ),
+
+                          // White circle with shadow
+                          Container(
+                            padding: const EdgeInsets.all(40),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(100),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF39AC86).withOpacity(0.2),
+                                  blurRadius: 30,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Container(
+                              width: 128,
+                              height: 128,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(64),
+                                border: Border.all(
+                                  color: const Color(0xFF39AC86).withOpacity(0.3),
+                                  width: 6,
+                                ),
+                              ),
+                              child: Center(
+                                child: Container(
+                                  width: 96,
+                                  height: 96,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(48),
+                                    border: Border.all(
+                                      color: const Color(0xFF39AC86).withOpacity(0.2),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.eco,
+                                      size: 80,
+                                      color: Color(0xFF39AC86),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                            child: Center(
-                              child: Container(
-                                width: 96,
-                                height: 96,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(48),
-                                  border: Border.all(
-                                    color: const Color(0xFF39AC86).withOpacity(0.2),
-                                    width: 2,
-                                  ),
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.eco,
-                                    size: 80,
-                                    color: Color(0xFF39AC86),
-                                  ),
-                                ),
-                              ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 40), // Increased spacing
+
+                    // App Name & Tagline - HTML Style
+                    Column(
+                      children: [
+                        const Text(
+                          'Harvest Hub',
+                          style: TextStyle(
+                            color: Color(0xFF39AC86),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 3,
+                          ),
+                        ),
+                        const SizedBox(height: 16), // Increased spacing
+                        const Text(
+                          'Grow, Share, Sustain',
+                          style: TextStyle(
+                            color: Color(0xFF101816),
+                            fontSize: 42,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.5,
+                            height: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 20), // Increased spacing
+                        SizedBox(
+                          width: 280,
+                          child: Text(
+                            'Nurturing communities through mindful eating and garden tracking.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: const Color(0xFF101816).withOpacity(0.6),
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              height: 1.5,
                             ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // App Name & Tagline - HTML Style
-                  Column(
-                    children: [
-                      const Text(
-                        'Harvest Hub',
-                        style: TextStyle(
-                          color: Color(0xFF39AC86),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 3,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Grow, Share, Sustain',
-                        style: TextStyle(
-                          color: Color(0xFF101816),
-                          fontSize: 42,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: -0.5,
-                          height: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: 280,
-                        child: Text(
-                          'Nurturing communities through mindful eating and garden tracking.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: const Color(0xFF101816).withOpacity(0.6),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
-            // Bottom Section with Progress
+            // Bottom Section with Progress - FIXED position
             Positioned(
-              bottom: 64,
+              bottom: 100, // Fixed position from bottom
               left: 0,
               right: 0,
               child: Column(
@@ -215,7 +222,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16), // Increased spacing
                   Container(
                     width: 320,
                     height: 6,
@@ -242,7 +249,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 40), // Increased spacing
                   Text(
                     'VERSION 1.0.10',
                     style: TextStyle(
@@ -256,7 +263,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
 
-            // Optional: Add a subtle background pattern (optional - can be removed if causing issues)
+            // Subtle background gradient
             Positioned(
               bottom: 0,
               left: 0,
