@@ -1,39 +1,90 @@
-name: Flutter APK Build
+name: Flutter APK Build - DIRECT GRADLE
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.38.7'
-
-      - name: Get Flutter packages
-        run: flutter pub get
-
-      - name: Clean project
-        run: flutter clean
-
-      - name: Precache Flutter
-        run: flutter precache
-
-      - name: Build APK (Release)
-        run: flutter build apk --release
-        working-directory: ./
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release.apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.38.5'
+    
+    - name: Fix Android configuration
+      run: |
+        echo "=== UPDATING ANDROID CONFIG ==="
+        cd android
+        
+        # 1. Update Gradle to 8.7
+        echo "Updating Gradle to 8.7..."
+        sed -i 's/gradle-8.4-all.zip/gradle-8.7-all.zip/' gradle/wrapper/gradle-wrapper.properties
+        sed -i 's/gradle-8.3-all.zip/gradle-8.7-all.zip/' gradle/wrapper/gradle-wrapper.properties
+        
+        # 2. Check if using old-style build.gradle
+        if [ -f build.gradle ]; then
+          echo "Updating old build.gradle..."
+          sed -i 's/com.android.tools.build:gradle:[0-9.]*/com.android.tools.build:gradle:8.6.0/' build.gradle
+          sed -i 's/kotlin-gradle-plugin:[0-9.]*/kotlin-gradle-plugin:2.1.0/' build.gradle
+        fi
+        
+        # 3. Check if using new settings.gradle.kts
+        if [ -f settings.gradle.kts ]; then
+          echo "Updating settings.gradle.kts..."
+          sed -i 's/androidGradlePlugin = "[0-9.]*"/androidGradlePlugin = "8.6.0"/' settings.gradle.kts
+          sed -i 's/kotlinVersion = "[0-9.]*"/kotlinVersion = "2.1.0"/' settings.gradle.kts
+        fi
+        
+        echo "Android configuration updated!"
+    
+    - name: Build with DIRECT Gradle (NOT flutter build)
+      run: |
+        echo "=== BUILDING WITH DIRECT GRADLE COMMANDS ==="
+        cd android
+        
+        # Make gradlew executable
+        chmod +x gradlew
+        
+        # Clean
+        ./gradlew clean
+        
+        # Build release - THIS IS THE KEY DIFFERENCE!
+        ./gradlew assembleRelease --no-daemon --stacktrace
+        
+        # Find the APK
+        echo "=== SEARCHING FOR APK ==="
+        find . -name "*.apk" -type f 2>/dev/null | head -20
+        
+        # Check specific directories
+        echo "=== Checking app/build/outputs ==="
+        ls -la app/build/outputs/ || echo "No outputs dir"
+        ls -la app/build/outputs/apk/ 2>/dev/null || echo "No apk dir"
+        ls -la app/build/outputs/flutter-apk/ 2>/dev/null || echo "No flutter-apk dir"
+    
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-apk
+        path: |
+          android/app/build/outputs/apk/**/*.apk
+          android/app/build/outputs/flutter-apk/**/*.apk
+          build/**/*.apk
+          **/*release*.apk
+        if-no-files-found: error
+        retention-days: 90
