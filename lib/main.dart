@@ -38,6 +38,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -85,7 +86,7 @@ class _SplashScreenState extends State<SplashScreen> {
               child: SizedBox(height: 40),
             ),
 
-            // MAIN CONTENT - Properly centered
+            // UPPER CONTENT - Logo and Main Text
             Center(
               child: SingleChildScrollView(
                 child: Padding(
@@ -93,15 +94,16 @@ class _SplashScreenState extends State<SplashScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Logo
+                      // Logo - Moved UP
                       Container(
+                        margin: const EdgeInsets.only(bottom: 30), // Reduced from 40
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
                             // Outer glow
                             Container(
-                              width: 200,
-                              height: 200,
+                              width: 180, // Reduced from 200
+                              height: 180, // Reduced from 200
                               decoration: BoxDecoration(
                                 color: const Color(0xFF39AC86).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(100),
@@ -109,7 +111,7 @@ class _SplashScreenState extends State<SplashScreen> {
                             ),
                             // White circle with shadow
                             Container(
-                              padding: const EdgeInsets.all(40),
+                              padding: const EdgeInsets.all(36), // Reduced from 40
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(100),
@@ -122,8 +124,8 @@ class _SplashScreenState extends State<SplashScreen> {
                                 ],
                               ),
                               child: Container(
-                                width: 128,
-                                height: 128,
+                                width: 112, // Reduced from 128
+                                height: 112, // Reduced from 128
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(64),
                                   border: Border.all(
@@ -133,8 +135,8 @@ class _SplashScreenState extends State<SplashScreen> {
                                 ),
                                 child: Center(
                                   child: Container(
-                                    width: 96,
-                                    height: 96,
+                                    width: 84, // Reduced from 96
+                                    height: 84, // Reduced from 96
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(48),
                                       border: Border.all(
@@ -145,7 +147,7 @@ class _SplashScreenState extends State<SplashScreen> {
                                     child: const Center(
                                       child: Icon(
                                         Icons.eco,
-                                        size: 80,
+                                        size: 70, // Reduced from 80
                                         color: Color(0xFF39AC86),
                                       ),
                                     ),
@@ -157,15 +159,13 @@ class _SplashScreenState extends State<SplashScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 40),
-
-                      // Title and Tagline - FIXED to match PNG
+                      // Title and Tagline
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const Text(
-                            'HARVEST HUB', // Changed from 'Harvest Hub' to match PNG
+                            'HARVEST HUB',
                             style: TextStyle(
                               color: Color(0xFF39AC86),
                               fontSize: 12,
@@ -173,19 +173,19 @@ class _SplashScreenState extends State<SplashScreen> {
                               letterSpacing: 3,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12), // Reduced from 16
                           const Text(
-                            'Grow, Share, Sustain', // SINGLE LINE, not broken
+                            'Grow, Share,\nSustain', // Back to 2 lines as in PNG
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Color(0xFF101816),
-                              fontSize: 36, // Reduced from 42
+                              fontSize: 32, // Reduced from 36
                               fontWeight: FontWeight.bold,
                               letterSpacing: -0.5,
-                              height: 1.0, // Reduced from 1.1
+                              height: 1.0,
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16), // Reduced from 20
                           SizedBox(
                             width: 280,
                             child: Column(
@@ -195,9 +195,9 @@ class _SplashScreenState extends State<SplashScreen> {
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: const Color(0xFF101816).withOpacity(0.6),
-                                    fontSize: 16, // Reduced from 18
+                                    fontSize: 14, // Reduced from 16
                                     fontWeight: FontWeight.w500,
-                                    height: 1.3, // Reduced from 1.5
+                                    height: 1.3,
                                   ),
                                 ),
                                 Text(
@@ -205,7 +205,7 @@ class _SplashScreenState extends State<SplashScreen> {
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: const Color(0xFF101816).withOpacity(0.6),
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                     height: 1.3,
                                   ),
@@ -215,7 +215,7 @@ class _SplashScreenState extends State<SplashScreen> {
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: const Color(0xFF101816).withOpacity(0.6),
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                     height: 1.3,
                                   ),
@@ -231,9 +231,9 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
 
-            // Bottom Section - Fixed at bottom
+            // LOWER CONTENT - Much lower position
             Positioned(
-              bottom: 100,
+              bottom: 60, // Moved UP from 100 to give space for version text
               left: 0,
               right: 0,
               child: Column(
@@ -247,9 +247,9 @@ class _SplashScreenState extends State<SplashScreen> {
                       letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12), // Reduced from 16
                   Container(
-                    width: 320,
+                    width: 300, // Reduced from 320
                     height: 6,
                     margin: const EdgeInsets.symmetric(horizontal: 20),
                     decoration: BoxDecoration(
@@ -274,27 +274,34 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 40),
-                  Text(
-                    'VERSION 1.0.10',
-                    style: TextStyle(
-                      color: const Color(0xFF101816).withOpacity(0.3),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 2,
-                    ),
-                  ),
                 ],
               ),
             ),
 
-            // Subtle background gradient
+            // VERSION TEXT - At the very bottom
+            Positioned(
+              bottom: 20, // Very close to bottom
+              left: 0,
+              right: 0,
+              child: Text(
+                'VERSION 1.0.10',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: const Color(0xFF101816).withOpacity(0.3),
+                  fontSize: 11, // Reduced from 12
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
+
+            // Subtle background gradient - Reduced height
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
               child: Container(
-                height: MediaQuery.of(context).size.height * 0.25,
+                height: MediaQuery.of(context).size.height * 0.15, // Reduced from 0.25
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.bottomCenter,
@@ -313,8 +320,6 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-           
-
 
 // // main.dart - Fixed version
 // import 'package:flutter/material.dart';
