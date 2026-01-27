@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'add_new_crop_screen.dart';
 
 class GardenScreen extends StatelessWidget {
   const GardenScreen({super.key});
@@ -96,26 +97,39 @@ class GardenScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF39AC86),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF39AC86).withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.add,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
+
+// Then find the + button in the GardenScreen and update its onTap/onPressed:
+Container(
+  width: 40,
+  height: 40,
+  decoration: BoxDecoration(
+    color: const Color(0xFF39AC86),
+    borderRadius: BorderRadius.circular(20),
+    boxShadow: [
+      BoxShadow(
+        color: const Color(0xFF39AC86).withOpacity(0.3),
+        blurRadius: 8,
+        offset: const Offset(0, 4),
+      ),
+    ],
+  ),
+  child: IconButton(
+    onPressed: () {
+      // Navigate to AddNewCropScreen
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const AddNewCropScreen(),
+        ),
+      );
+    },
+    icon: const Icon(
+      Icons.add,
+      color: Colors.white,
+      size: 24,
+    ),
+    padding: EdgeInsets.zero, // Remove default padding
+  ),
+),
                       ],
                     ),
                   ],
