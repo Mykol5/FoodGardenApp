@@ -1,4 +1,4 @@
-// lib/screens/product_details_screen.dart
+// lib/screens/product_details_screen.dart new
 import 'package:flutter/material.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
