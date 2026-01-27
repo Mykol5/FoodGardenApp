@@ -159,13 +159,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
                       const SizedBox(height: 40),
 
-                      // Title and Tagline - PROPERLY CENTERED
+                      // Title and Tagline - FIXED to match PNG
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const Text(
-                            'Harvest Hub',
+                            'HARVEST HUB', // Changed from 'Harvest Hub' to match PNG
                             style: TextStyle(
                               color: Color(0xFF39AC86),
                               fontSize: 12,
@@ -175,28 +175,52 @@ class _SplashScreenState extends State<SplashScreen> {
                           ),
                           const SizedBox(height: 16),
                           const Text(
-                            'Grow, Share,\nSustain',
+                            'Grow, Share, Sustain', // SINGLE LINE, not broken
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Color(0xFF101816),
-                              fontSize: 42,
+                              fontSize: 36, // Reduced from 42
                               fontWeight: FontWeight.bold,
                               letterSpacing: -0.5,
-                              height: 1.1,
+                              height: 1.0, // Reduced from 1.1
                             ),
                           ),
                           const SizedBox(height: 20),
                           SizedBox(
                             width: 280,
-                            child: Text(
-                              'Nurturing communities through mindful eating and garden tracking.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: const Color(0xFF101816).withOpacity(0.6),
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
-                                height: 1.5,
-                              ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Nurturing communities through',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: const Color(0xFF101816).withOpacity(0.6),
+                                    fontSize: 16, // Reduced from 18
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.3, // Reduced from 1.5
+                                  ),
+                                ),
+                                Text(
+                                  'mindful eating and garden',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: const Color(0xFF101816).withOpacity(0.6),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.3,
+                                  ),
+                                ),
+                                Text(
+                                  'tracking.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: const Color(0xFF101816).withOpacity(0.6),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -289,7 +313,7 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-
+           
 
 
 // // main.dart - Fixed version
