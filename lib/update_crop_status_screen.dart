@@ -337,7 +337,7 @@ class _UpdateCropStatusScreenState extends State<UpdateCropStatusScreen> {
                               border: Border.all(
                                 color: Color(0xFF19E6A2).withOpacity(0.3),
                                 width: 2,
-                                style: BorderStyle.dashed,
+                                style: BorderStyle.solid,
                               ),
                             ),
                             child: Column(
