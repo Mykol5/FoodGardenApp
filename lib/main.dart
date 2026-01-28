@@ -1,4 +1,4 @@
-// main.dart - HTML-like splash screen that works
+// main.dart - HTML-like splash screen
 // main.dart - FIXED arrangement version
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
