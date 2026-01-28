@@ -332,7 +332,13 @@ Container(
                       ),
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const AllCropsScreen(),
+                          ),
+                        );
+                      },
                       child: const Text(
                         'View all',
                         style: TextStyle(
