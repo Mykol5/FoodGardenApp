@@ -201,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           onPressed: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => const AddNewCropScreen(),
+                                builder: (context) => AddNewCropScreen(), // REMOVED const
                               ),
                             );
                           },
@@ -213,7 +213,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           padding: EdgeInsets.zero,
                         ),
                       ),
+                    ], // <-- ADD THIS CLOSING BRACKET for the Row children
+                  ), // <-- ADD THIS CLOSING BRACKET for the Row
+                  
                   const SizedBox(height: 16),
+                  
                   // Search Bar
                   Container(
                     height: 48,
