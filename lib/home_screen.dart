@@ -119,6 +119,40 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
+                      
+                      // Message Icon (GREEN - added to LEFT of notification)
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? const Color(0xFF2D3A35) : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const MessagesScreen(),
+                              ),
+                            );
+                          },
+                          icon: Icon(
+                            Icons.message_outlined,
+                            color: const Color(0xFF39AC86), // GREEN color for message icon
+                            size: 20,
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      
                       // Notification Icon
                       Container(
                         width: 40,
@@ -134,13 +168,51 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.notifications_outlined,
-                          color: Colors.black87,
+                        child: IconButton(
+                          onPressed: () {
+                            // TODO: Handle notification
+                          },
+                          icon: const Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.black87,
+                            size: 20,
+                          ),
+                          padding: EdgeInsets.zero,
                         ),
                       ),
-                    ],
-                  ),
+                      
+                      // Add Button (if you have this)
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF39AC86),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF39AC86).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const AddNewCropScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.add,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
                   const SizedBox(height: 16),
                   // Search Bar
                   Container(
