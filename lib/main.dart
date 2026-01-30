@@ -1,8 +1,8 @@
 // main.dart - FIXED arrangement version
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // ADD THIS
+import 'package:provider/provider.dart';
 import 'login_screen.dart';
-import 'providers/auth_provider.dart'; // ADD THIS
+import 'providers/auth_provider.dart';
 
 void main() {
   runApp(const MyApp());
