@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -58,7 +57,7 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
         return {'success': true, 'user': result['user']};
       } else {
-        _error = _apiService.getErrorMessage(result);
+        _error = result['error'] ?? 'Login failed';
         notifyListeners();
         return {'success': false, 'error': _error};
       }
@@ -97,7 +96,7 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
         return {'success': true, 'user': result['user']};
       } else {
-        _error = _apiService.getErrorMessage(result);
+        _error = result['error'] ?? 'Registration failed';
         notifyListeners();
         return {'success': false, 'error': _error};
       }
@@ -125,7 +124,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Forgot password
+  // Forgot password - ADD THIS METHOD
   Future<Map<String, dynamic>> forgotPassword(String email) async {
     _isLoading = true;
     _error = null;
