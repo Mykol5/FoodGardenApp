@@ -1,7 +1,8 @@
-// main.dart - HTML-like splash screen works
 // main.dart - FIXED arrangement version
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // ADD THIS
 import 'login_screen.dart';
+import 'providers/auth_provider.dart'; // ADD THIS
 
 void main() {
   runApp(const MyApp());
@@ -12,32 +13,36 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Harvest Hub',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primaryColor: const Color(0xFF39AC86),
-        scaffoldBackgroundColor: const Color(0xFFF9F8F6),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF39AC86),
-          brightness: Brightness.light,
+    return MultiProvider( // CHANGE MaterialApp to MultiProvider
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Harvest Hub',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          primaryColor: const Color(0xFF39AC86),
+          scaffoldBackgroundColor: const Color(0xFFF9F8F6),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF39AC86),
+            brightness: Brightness.light,
+          ),
+          useMaterial3: true,
         ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        primaryColor: const Color(0xFF39AC86),
-        scaffoldBackgroundColor: const Color(0xFF212C28),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF39AC86),
-          brightness: Brightness.dark,
+        darkTheme: ThemeData(
+          primaryColor: const Color(0xFF39AC86),
+          scaffoldBackgroundColor: const Color(0xFF212C28),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF39AC86),
+            brightness: Brightness.dark,
+          ),
+          useMaterial3: true,
         ),
-        useMaterial3: true,
+        home: const SplashScreen(),
       ),
-      home: const SplashScreen(),
     );
   }
 }
-
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -320,6 +325,333 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
+
+
+
+
+
+// // main.dart - HTML-like splash screen works
+// // main.dart - FIXED arrangement version
+// import 'package:flutter/material.dart';
+// import 'login_screen.dart';
+
+// void main() {
+//   runApp(const MyApp());
+// }
+
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       title: 'Harvest Hub',
+//       debugShowCheckedModeBanner: false,
+//       theme: ThemeData(
+//         primaryColor: const Color(0xFF39AC86),
+//         scaffoldBackgroundColor: const Color(0xFFF9F8F6),
+//         colorScheme: ColorScheme.fromSeed(
+//           seedColor: const Color(0xFF39AC86),
+//           brightness: Brightness.light,
+//         ),
+//         useMaterial3: true,
+//       ),
+//       darkTheme: ThemeData(
+//         primaryColor: const Color(0xFF39AC86),
+//         scaffoldBackgroundColor: const Color(0xFF212C28),
+//         colorScheme: ColorScheme.fromSeed(
+//           seedColor: const Color(0xFF39AC86),
+//           brightness: Brightness.dark,
+//         ),
+//         useMaterial3: true,
+//       ),
+//       home: const SplashScreen(),
+//     );
+//   }
+// }
+
+
+// class SplashScreen extends StatefulWidget {
+//   const SplashScreen({super.key});
+
+//   @override
+//   State<SplashScreen> createState() => _SplashScreenState();
+// }
+
+// class _SplashScreenState extends State<SplashScreen> {
+//   @override
+//   void initState() {
+//     super.initState();
+//     Future.delayed(const Duration(seconds: 3), () {
+//       if (mounted) {
+//         Navigator.of(context).pushReplacement(
+//           MaterialPageRoute(builder: (context) => const LoginScreen()),
+//         );
+//       }
+//     });
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       body: Container(
+//         width: double.infinity,
+//         height: double.infinity,
+//         decoration: const BoxDecoration(
+//           gradient: LinearGradient(
+//             begin: Alignment.topCenter,
+//             end: Alignment.bottomCenter,
+//             colors: [
+//               Color(0xFFF9F8F6),
+//               Color(0xFFE8F3F0),
+//               Color(0xFF39AC86),
+//             ],
+//           ),
+//         ),
+//         child: Stack(
+//           children: [
+//             // Status Bar Placeholder
+//             const Positioned(
+//               top: 40,
+//               left: 0,
+//               right: 0,
+//               child: SizedBox(height: 40),
+//             ),
+
+//             // UPPER CONTENT - Logo and Main Text
+//             Center(
+//               child: SingleChildScrollView(
+//                 child: Padding(
+//                   padding: const EdgeInsets.symmetric(horizontal: 24),
+//                   child: Column(
+//                     mainAxisAlignment: MainAxisAlignment.center,
+//                     children: [
+//                       // Logo - Moved UP
+//                       Container(
+//                         margin: const EdgeInsets.only(bottom: 30), // Reduced from 40
+//                         child: Stack(
+//                           alignment: Alignment.center,
+//                           children: [
+//                             // Outer glow
+//                             Container(
+//                               width: 180, // Reduced from 200
+//                               height: 180, // Reduced from 200
+//                               decoration: BoxDecoration(
+//                                 color: const Color(0xFF39AC86).withOpacity(0.1),
+//                                 borderRadius: BorderRadius.circular(100),
+//                               ),
+//                             ),
+//                             // White circle with shadow
+//                             Container(
+//                               padding: const EdgeInsets.all(36), // Reduced from 40
+//                               decoration: BoxDecoration(
+//                                 color: Colors.white,
+//                                 borderRadius: BorderRadius.circular(100),
+//                                 boxShadow: [
+//                                   BoxShadow(
+//                                     color: const Color(0xFF39AC86).withOpacity(0.2),
+//                                     blurRadius: 30,
+//                                     offset: const Offset(0, 4),
+//                                   ),
+//                                 ],
+//                               ),
+//                               child: Container(
+//                                 width: 112, // Reduced from 128
+//                                 height: 112, // Reduced from 128
+//                                 decoration: BoxDecoration(
+//                                   borderRadius: BorderRadius.circular(64),
+//                                   border: Border.all(
+//                                     color: const Color(0xFF39AC86).withOpacity(0.3),
+//                                     width: 6,
+//                                   ),
+//                                 ),
+//                                 child: Center(
+//                                   child: Container(
+//                                     width: 84, // Reduced from 96
+//                                     height: 84, // Reduced from 96
+//                                     decoration: BoxDecoration(
+//                                       borderRadius: BorderRadius.circular(48),
+//                                       border: Border.all(
+//                                         color: const Color(0xFF39AC86).withOpacity(0.2),
+//                                         width: 2,
+//                                       ),
+//                                     ),
+//                                     child: const Center(
+//                                       child: Icon(
+//                                         Icons.eco,
+//                                         size: 70, // Reduced from 80
+//                                         color: Color(0xFF39AC86),
+//                                       ),
+//                                     ),
+//                                   ),
+//                                 ),
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                       ),
+
+//                       // Title and Tagline
+//                       Column(
+//                         mainAxisAlignment: MainAxisAlignment.center,
+//                         crossAxisAlignment: CrossAxisAlignment.center,
+//                         children: [
+//                           const Text(
+//                             'HARVEST HUB',
+//                             style: TextStyle(
+//                               color: Color(0xFF39AC86),
+//                               fontSize: 12,
+//                               fontWeight: FontWeight.bold,
+//                               letterSpacing: 3,
+//                             ),
+//                           ),
+//                           const SizedBox(height: 12), // Reduced from 16
+//                           const Text(
+//                             'Grow, Share,\nSustain', // Back to 2 lines as in PNG
+//                             textAlign: TextAlign.center,
+//                             style: TextStyle(
+//                               color: Color(0xFF101816),
+//                               fontSize: 32, // Reduced from 36
+//                               fontWeight: FontWeight.bold,
+//                               letterSpacing: -0.5,
+//                               height: 1.0,
+//                             ),
+//                           ),
+//                           const SizedBox(height: 16), // Reduced from 20
+//                           SizedBox(
+//                             width: 280,
+//                             child: Column(
+//                               children: [
+//                                 Text(
+//                                   'Nurturing communities through',
+//                                   textAlign: TextAlign.center,
+//                                   style: TextStyle(
+//                                     color: const Color(0xFF101816).withOpacity(0.6),
+//                                     fontSize: 14, // Reduced from 16
+//                                     fontWeight: FontWeight.w500,
+//                                     height: 1.3,
+//                                   ),
+//                                 ),
+//                                 Text(
+//                                   'mindful eating and garden',
+//                                   textAlign: TextAlign.center,
+//                                   style: TextStyle(
+//                                     color: const Color(0xFF101816).withOpacity(0.6),
+//                                     fontSize: 14,
+//                                     fontWeight: FontWeight.w500,
+//                                     height: 1.3,
+//                                   ),
+//                                 ),
+//                                 Text(
+//                                   'tracking.',
+//                                   textAlign: TextAlign.center,
+//                                   style: TextStyle(
+//                                     color: const Color(0xFF101816).withOpacity(0.6),
+//                                     fontSize: 14,
+//                                     fontWeight: FontWeight.w500,
+//                                     height: 1.3,
+//                                   ),
+//                                 ),
+//                               ],
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//               ),
+//             ),
+
+//             // LOWER CONTENT - Much lower position
+//             Positioned(
+//               bottom: 60, // Moved UP from 100 to give space for version text
+//               left: 0,
+//               right: 0,
+//               child: Column(
+//                 children: [
+//                   const Text(
+//                     'Cultivating your garden...',
+//                     style: TextStyle(
+//                       color: Color(0xFF101816),
+//                       fontSize: 14,
+//                       fontWeight: FontWeight.w500,
+//                       letterSpacing: 0.5,
+//                     ),
+//                   ),
+//                   const SizedBox(height: 12), // Reduced from 16
+//                   Container(
+//                     width: 300, // Reduced from 320
+//                     height: 6,
+//                     margin: const EdgeInsets.symmetric(horizontal: 20),
+//                     decoration: BoxDecoration(
+//                       color: const Color(0xFF39AC86).withOpacity(0.2),
+//                       borderRadius: BorderRadius.circular(3),
+//                     ),
+//                     child: Align(
+//                       alignment: Alignment.centerLeft,
+//                       child: Container(
+//                         width: 120,
+//                         height: 6,
+//                         decoration: BoxDecoration(
+//                           color: const Color(0xFF39AC86),
+//                           borderRadius: BorderRadius.circular(3),
+//                           boxShadow: [
+//                             BoxShadow(
+//                               color: const Color(0xFF39AC86).withOpacity(0.5),
+//                               blurRadius: 10,
+//                             ),
+//                           ],
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ),
+
+//             // VERSION TEXT - At the very bottom
+//             Positioned(
+//               bottom: 20, // Very close to bottom
+//               left: 0,
+//               right: 0,
+//               child: Text(
+//                 'VERSION 1.0.10',
+//                 textAlign: TextAlign.center,
+//                 style: TextStyle(
+//                   color: const Color(0xFF101816).withOpacity(0.3),
+//                   fontSize: 11, // Reduced from 12
+//                   fontWeight: FontWeight.w600,
+//                   letterSpacing: 2,
+//                 ),
+//               ),
+//             ),
+
+//             // Subtle background gradient - Reduced height
+//             Positioned(
+//               bottom: 0,
+//               left: 0,
+//               right: 0,
+//               child: Container(
+//                 height: MediaQuery.of(context).size.height * 0.15, // Reduced from 0.25
+//                 decoration: BoxDecoration(
+//                   gradient: LinearGradient(
+//                     begin: Alignment.bottomCenter,
+//                     end: Alignment.topCenter,
+//                     colors: [
+//                       const Color(0xFF39AC86).withOpacity(0.1),
+//                       Colors.transparent,
+//                     ],
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 // // main.dart - Fixed version
 // import 'package:flutter/material.dart';
