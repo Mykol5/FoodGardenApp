@@ -36,7 +36,7 @@ import 'package:provider/provider.dart';
 import 'product_details_screen.dart';
 import 'messages_screen.dart';
 import 'add_new_crop.dart';
-import '../providers/auth_provider.dart';
+import 'providers/auth_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
