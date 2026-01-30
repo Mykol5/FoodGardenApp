@@ -136,36 +136,42 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _showTermsModal() async {
-    final result = await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => TermsPrivacyModal(
-        onAccept: () {
-          setState(() {
-            _termsAccepted = true;
-          });
-          // Now proceed with registration
-          _handleAuth();
-        },
-      ),
-    );
-    
-    if (result != null && result == true) {
-      setState(() {
-        _termsAccepted = true;
-      });
-    }
+  final bool? accepted = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => TermsPrivacyModal(
+      onAccept: () {
+        Navigator.pop(context, true); // Return true when accepted
+      },
+    ),
+  );
+  
+  if (accepted == true) {
+    setState(() {
+      _termsAccepted = true;
+    });
+    // Now proceed with registration
+    _handleAuth();
   }
+}
 
   // Forgot password handler
-  Future<void> _handleForgotPassword() async {
-    if (_emailController.text.isEmpty) {
-      _showError('Please enter your email first');
-      return;
-    }
+// Forgot password handler
+Future<void> _handleForgotPassword() async {
+  if (_emailController.text.isEmpty) {
+    _showError('Please enter your email first');
+    return;
+  }
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  
+  // Show loading
+  setState(() {
+    _errorMessage = null;
+  });
+
+  try {
     final result = await authProvider.forgotPassword(_emailController.text.trim());
 
     if (result['success'] == true) {
@@ -180,7 +186,10 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       _showError(result['error'] ?? 'Failed to send reset email');
     }
+  } catch (e) {
+    _showError('An error occurred: $e');
   }
+}
 
   // Reset form when switching between login/register
   void _resetForm() {
