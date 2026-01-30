@@ -11,7 +11,7 @@ class ApiService {
   // For development: http://localhost:5000
   // For Flutter web/emulator: http://10.0.2.2:5000 (Android emulator)
   // For physical device: use your computer's IP address
-  static const String baseUrl = 'http://10.0.2.2:5000'; // Change as needed
+  static const String baseUrl = 'https://foodsharingbackend.onrender.com'; // Change as needed
   
   String? _token;
 
