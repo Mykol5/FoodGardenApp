@@ -182,15 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 'https://lh3.googleusercontent.com/aida-public/AB6AXuBeNLXprSkZePIHnxTWtvyM-KPE2stLokXNW-bYLV40rUrC6BuYYr6AYiDzV4zUoZd0FIHlHmeOEC3NRE-PXXpQprPgiqU_iF2LpX4-F3rC0snOzJ8Teg6pJo0nqmUZsvgarnrRsiUBFlG59s_CxHa6udPML6MN_d6kfPH074b9MKpIX5yQWrSAboHY-qmHNtK6MMGz_yjfk6zWj5aPPpI0ln05KJlbQgJohDDwEKKk3LNgV7gdv2OGcB1wiQIC-_odbwbr7fAFFzVU',
                               ),
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: const Color(0xFF39AC86).withOpacity(0.1),
-                                  child: const Icon(
-                                    Icons.person,
-                                    color: Color(0xFF39AC86),
-                                  ),
-                                );
-                              },
+                              // REMOVE the errorBuilder parameter entirely
                             ),
                           ),
                         ),
