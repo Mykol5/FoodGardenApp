@@ -8,41 +8,138 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+
+// In main.dart, update the MyApp widget:
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late Future _initFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _initFuture = _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    // Initialize ApiService
+    final apiService = ApiService();
+    await apiService.initialize();
+    
+    // Wait a bit for any async operations
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MultiProvider( // CHANGE MaterialApp to MultiProvider
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
-      child: MaterialApp(
-        title: 'Harvest Hub',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primaryColor: const Color(0xFF39AC86),
-          scaffoldBackgroundColor: const Color(0xFFF9F8F6),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF39AC86),
-            brightness: Brightness.light,
+    return FutureBuilder(
+      future: _initFuture,
+      builder: (context, snapshot) {
+        // Show loading screen while initializing
+        if (snapshot.connectionState != ConnectionState.done) {
+          return MaterialApp(
+            home: Scaffold(
+              backgroundColor: const Color(0xFFF9F8F6),
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      color: const Color(0xFF39AC86),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Initializing app...',
+                      style: TextStyle(
+                        color: const Color(0xFF101816),
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        return MultiProvider(
+          providers: [
+            ChangeNotifierProvider(
+              create: (_) => AuthProvider()..initialize(),
+            ),
+          ],
+          child: MaterialApp(
+            title: 'Harvest Hub',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              primaryColor: const Color(0xFF39AC86),
+              scaffoldBackgroundColor: const Color(0xFFF9F8F6),
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFF39AC86),
+                brightness: Brightness.light,
+              ),
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData(
+              primaryColor: const Color(0xFF39AC86),
+              scaffoldBackgroundColor: const Color(0xFF212C28),
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFF39AC86),
+                brightness: Brightness.dark,
+              ),
+              useMaterial3: true,
+            ),
+            home: const SplashScreen(),
           ),
-          useMaterial3: true,
-        ),
-        darkTheme: ThemeData(
-          primaryColor: const Color(0xFF39AC86),
-          scaffoldBackgroundColor: const Color(0xFF212C28),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF39AC86),
-            brightness: Brightness.dark,
-          ),
-          useMaterial3: true,
-        ),
-        home: const SplashScreen(),
-      ),
+        );
+      },
     );
   }
 }
+
+
+
+
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return MultiProvider( // CHANGE MaterialApp to MultiProvider
+//       providers: [
+//         ChangeNotifierProvider(create: (_) => AuthProvider()),
+//       ],
+//       child: MaterialApp(
+//         title: 'Harvest Hub',
+//         debugShowCheckedModeBanner: false,
+//         theme: ThemeData(
+//           primaryColor: const Color(0xFF39AC86),
+//           scaffoldBackgroundColor: const Color(0xFFF9F8F6),
+//           colorScheme: ColorScheme.fromSeed(
+//             seedColor: const Color(0xFF39AC86),
+//             brightness: Brightness.light,
+//           ),
+//           useMaterial3: true,
+//         ),
+//         darkTheme: ThemeData(
+//           primaryColor: const Color(0xFF39AC86),
+//           scaffoldBackgroundColor: const Color(0xFF212C28),
+//           colorScheme: ColorScheme.fromSeed(
+//             seedColor: const Color(0xFF39AC86),
+//             brightness: Brightness.dark,
+//           ),
+//           useMaterial3: true,
+//         ),
+//         home: const SplashScreen(),
+//       ),
+//     );
+//   }
+// }
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
