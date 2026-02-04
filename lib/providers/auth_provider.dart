@@ -14,15 +14,35 @@ class AuthProvider with ChangeNotifier {
   bool get isAuthenticated => _apiService.isLoggedIn;
 
   // Initialize auth state
-  Future<void> initialize() async {
-    await _apiService.initialize();
+  // Future<void> initialize() async {
+  //   await _apiService.initialize();
     
-    if (_apiService.isLoggedIn) {
-      await _loadCurrentUser();
-    }
+  //   if (_apiService.isLoggedIn) {
+  //     await _loadCurrentUser();
+  //   }
     
-    notifyListeners();
+  //   notifyListeners();
+  // }
+
+
+  // In AuthProvider, update the initialize method:
+Future<void> initialize() async {
+  print('🔄 Initializing AuthProvider...');
+  await _apiService.initialize();
+  
+  print('🔑 ApiService isLoggedIn: ${_apiService.isLoggedIn}');
+  print('🔑 ApiService token: ${_apiService.token?.substring(0, 50)}...');
+  
+  if (_apiService.isLoggedIn) {
+    print('👤 User is logged in, loading user data...');
+    await _loadCurrentUser();
+  } else {
+    print('👤 No user logged in');
   }
+  
+  notifyListeners();
+}
+  
 
   // Load current user from API
   Future<void> _loadCurrentUser() async {
