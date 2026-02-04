@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'login_screen.dart';
 import 'providers/auth_provider.dart';
+import 'services/api_service.dart';
 
 void main() {
   runApp(const MyApp());
