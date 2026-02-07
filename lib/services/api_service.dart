@@ -480,6 +480,186 @@ class ApiService {
 }
 
 
+// In ApiService class, add these methods:
+
+// Get user profile from backend
+Future<Map<String, dynamic>> getUserProfile(String userId) async {
+  try {
+    print('🔄 Getting user profile for: $userId');
+    print('🌐 URL: $baseUrl/api/users/$userId');
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/users/$userId'),
+      headers: _headers,
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return {
+        'success': true,
+        'profile': data,
+      };
+    } else {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to fetch profile',
+        'statusCode': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('❌ Get profile error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+// Update user profile
+Future<Map<String, dynamic>> updateUserProfile({
+  required String name,
+  String? phone,
+  String? bio,
+  String? location,
+  String? gardenName,
+  String? gardenSize,
+  String? profileImageUrl,
+}) async {
+  try {
+    print('🔄 Updating user profile');
+    print('🌐 URL: $baseUrl/api/users/update');
+    
+    final Map<String, dynamic> updateData = {
+      'name': name,
+    };
+    
+    if (phone != null) updateData['phone'] = phone;
+    if (bio != null) updateData['bio'] = bio;
+    if (location != null) updateData['location'] = location;
+    if (gardenName != null) updateData['garden_name'] = gardenName;
+    if (gardenSize != null) updateData['garden_size'] = gardenSize;
+    if (profileImageUrl != null) updateData['profile_image_url'] = profileImageUrl;
+    
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/users/update'),
+      headers: _headers,
+      body: jsonEncode(updateData),
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response: ${response.body}');
+    
+    final Map<String, dynamic> data = jsonDecode(response.body);
+    
+    if (response.statusCode == 200) {
+      // Update local user data
+      final prefs = await SharedPreferences.getInstance();
+      final currentUserData = await getSavedUserData();
+      
+      if (currentUserData != null) {
+        // Merge updates
+        final updatedUser = {...currentUserData, ...updateData};
+        await prefs.setString('user_data', jsonEncode(updatedUser));
+        print('✅ User data updated locally');
+      }
+      
+      return {
+        'success': true,
+        'user': data['user'],
+        'message': data['message'] ?? 'Profile updated successfully',
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to update profile',
+        'statusCode': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('❌ Update profile error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+// Get user's sharing history
+Future<Map<String, dynamic>> getSharingHistory() async {
+  try {
+    print('🔄 Getting sharing history');
+    print('🌐 URL: $baseUrl/api/users/sharing-history');
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/users/sharing-history'),
+      headers: _headers,
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return {
+        'success': true,
+        'history': data['history'] ?? [],
+        'stats': data['stats'] ?? {},
+      };
+    } else {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to fetch sharing history',
+        'statusCode': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('❌ Get sharing history error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+// Get user's garden crops
+Future<Map<String, dynamic>> getUserGardenCrops() async {
+  try {
+    print('🔄 Getting user garden crops');
+    print('🌐 URL: $baseUrl/api/users/garden-crops');
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/users/garden-crops'),
+      headers: _headers,
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return {
+        'success': true,
+        'crops': data['crops'] ?? [],
+      };
+    } else {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to fetch garden crops',
+        'statusCode': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('❌ Get garden crops error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
 
 
 // import 'dart:convert';
