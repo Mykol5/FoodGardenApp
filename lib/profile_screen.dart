@@ -13,15 +13,16 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ApiService _apiService = ApiService();
-  bool _isLoading = false;
+  bool _isLoading = true;
   Map<String, dynamic>? _profileData;
-  List<dynamic> _gardenCrops = [];
+  List<dynamic> _activeCrops = [];
   List<dynamic> _sharingHistory = [];
-  Map<String, dynamic> _stats = {
-    'shared': 0,
-    'helped': 0,
-    'saved': 0,
+  Map<String, dynamic> _impactStats = {
+    'sharedKg': 0,
+    'helpedCount': 0,
+    'savedCO2': 0,
   };
+  List<dynamic> _gardens = [];
 
   @override
   void initState() {
@@ -35,259 +36,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
+      // Load user profile
+      final profileResult = await _apiService.getUserProfile();
+      if (profileResult['success'] == true) {
+        setState(() {
+          _profileData = profileResult['profile'];
+        });
+      }
+
+      // Load crops
+      final cropsResult = await _apiService.getUserCrops();
+      if (cropsResult['success'] == true) {
+        // Filter active crops (not harvested)
+        final allCrops = cropsResult['crops'] ?? [];
+        setState(() {
+          _activeCrops = allCrops.where((crop) => 
+            crop['status'] != 'harvest' && (crop['progress'] ?? 0) < 100
+          ).take(5).toList();
+          
+          // Get sharing history (shared crops)
+          _sharingHistory = allCrops.where((crop) => 
+            crop['is_shared'] == true
+          ).take(5).toList();
+        });
+      }
+
+      // Load gardens
+      final gardensResult = await _apiService.getUserGardens();
+      if (gardensResult['success'] == true) {
+        setState(() {
+          _gardens = gardensResult['gardens'] ?? [];
+        });
+      }
+
+      // Load impact stats
+      final impactResult = await _apiService.getImpactStats();
+      if (impactResult['success'] == true) {
+        setState(() {
+          _impactStats = impactResult['impact'] ?? _impactStats;
+        });
+      }
+
+    } catch (e) {
+      print('❌ Error loading profile data: $e');
+      
+      // Fallback to data from AuthProvider
       final authProvider = context.read<AuthProvider>();
       final currentUser = authProvider.currentUser;
-
       if (currentUser != null) {
-        // Load additional profile data if needed
         setState(() {
           _profileData = currentUser;
         });
-
-        // Load sharing history (if endpoint exists)
-        await _loadSharingHistory();
-        
-        // Load garden crops (if endpoint exists)
-        await _loadGardenCrops();
-        
-        // Calculate stats from history
-        _calculateStats();
       }
-    } catch (e) {
-      print('❌ Error loading profile data: $e');
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
-  }
-
-  Future<void> _loadSharingHistory() async {
-    try {
-      final result = await _apiService.getSharingHistory();
-      if (result['success'] == true) {
-        setState(() {
-          _sharingHistory = result['history'] ?? [];
-          _stats = result['stats'] ?? _stats;
-        });
-      }
-    } catch (e) {
-      print('⚠️ Could not load sharing history: $e');
-    }
-  }
-
-  Future<void> _loadGardenCrops() async {
-    try {
-      final result = await _apiService.getUserGardenCrops();
-      if (result['success'] == true) {
-        setState(() {
-          _gardenCrops = result['crops'] ?? [];
-        });
-      }
-    } catch (e) {
-      print('⚠️ Could not load garden crops: $e');
-      // Fallback to dummy data if API not implemented
-      _gardenCrops = [
-        {
-          'id': '1',
-          'name': 'Heirloom Tomatoes',
-          'image_url': 'https://lh3.googleusercontent.com/aida-public/AB6AXuBKA_XUbQOHB2Q_TLrbZZh4Bs-a29SjPZwBq_oR9Iufo0JYqAntErNAah0Yeb2lJExnqCwFRPK9MBEnOMfikdQYf4MwQTzdfINO8ccpZAQrqEGEPBbkeHx6FhxgPumbkMCz5s4Y9V-L5eVVXNFbjKI7A9nh_gVfB9Q8TYGGdcCzkcufBGI6CrK3EFJ3dQn-DUwWgnTjI1zJ_L7VQApnKFm6ym357PVsHw2NgMOwglkQxx3VOkCBzgxWmT1t4ESRvK53-ppEB0WhQvDi',
-          'progress': 0.75,
-          'days_to_harvest': 12,
-        },
-        {
-          'id': '2',
-          'name': 'Curly Kale',
-          'image_url': 'https://lh3.googleusercontent.com/aida-public/AB6AXuB3MM_tbvVNjKbA_yZq3l5HwS8CH_fBjqZ926YpE5pgCXfyR9BFE215V9ZLhGs7pZO9NYz1Kj3SvtVCVR6lr1QTxH-9YFxQvWFCGv_F_MDyF8S-blD0Nr98EBbAg4bjaOm8IcG7xBg420_GIv_36CqrcO_O2bmt5VO_hOHNmQ_adwIUUia1Zj-lICv12Rt57OcU0JfqU5ptvuXXN7kgBL9v5yf4va0v7fv5KWpbSFUOwYZSvL0JVL9Bh6vj7WIndZOVoS7Q5Z5ki93o',
-          'progress': 0.4,
-          'days_to_harvest': 28,
-        },
-      ];
-    }
-  }
-
-  void _calculateStats() {
-    // Calculate stats from sharing history
-    int shared = _sharingHistory.length;
-    int helped = _sharingHistory.where((item) => item['helped_families'] != null).length;
-    int saved = shared * 3; // Estimate: 3kg CO2 saved per share
-    
-    setState(() {
-      _stats = {
-        'shared': shared,
-        'helped': helped,
-        'saved': saved,
-      };
-    });
-  }
-
-  // Share functionality method
-  void _showShareOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-        
-        return Container(
-          decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF2C3A35) : Colors.white,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 16),
-                // Drag handle
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Title
-                Text(
-                  'Share Profile',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Share options
-                Column(
-                  children: [
-                    _buildShareOption(
-                      context,
-                      icon: Icons.copy,
-                      label: 'Copy Profile Link',
-                      onTap: () {
-                        // Copy to clipboard
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Profile link copied to clipboard'),
-                          ),
-                        );
-                        Navigator.pop(context);
-                      },
-                    ),
-                    
-                    _buildShareOption(
-                      context,
-                      icon: Icons.message,
-                      label: 'Share via Message',
-                      onTap: () {
-                        // Share via messaging
-                        Navigator.pop(context);
-                      },
-                    ),
-                    
-                    _buildShareOption(
-                      context,
-                      icon: Icons.more_horiz,
-                      label: 'More Options',
-                      onTap: () {
-                        // Open system share sheet
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Cancel button
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: double.infinity,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: isDarkMode 
-                            ? const Color(0xFF3A4A45).withOpacity(0.5)
-                            : const Color(0xFFF9F8F6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: isDarkMode ? Colors.white70 : const Color(0xFF666666),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-  
-  // Helper method for share options
-  Widget _buildShareOption(BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: isDarkMode ? Colors.white.withOpacity(0.1) : const Color(0xFFF0F2F1),
-            ),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: const Color(0xFF39AC86),
-              size: 24,
-            ),
-            const SizedBox(width: 16),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
-              ),
-            ),
-            const Spacer(),
-            Icon(
-              Icons.chevron_right,
-              color: Colors.grey.withOpacity(0.5),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -308,7 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 20),
               Text(
-                'Loading profile...',
+                'Loading your garden profile...',
                 style: TextStyle(
                   color: isDarkMode ? Colors.white : Colors.black,
                 ),
@@ -355,31 +160,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     // Title
                     const Text(
-                      'Sustainability Profile',
+                      'My Garden Profile',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    // Settings button
-                    GestureDetector(
-                      onTap: () {
-                        // Handle settings tap
-                      },
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: isDarkMode ? const Color(0xFF2C3A35) : Colors.white,
-                        ),
-                        child: const Icon(
-                          Icons.settings,
-                          color: Colors.black87,
-                          size: 20,
-                        ),
-                      ),
-                    ),
+                    // Empty container for spacing
+                    Container(width: 40, height: 40),
                   ],
                 ),
               ),
@@ -405,32 +193,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(64),
-                            child: currentUser?['profile_image_url'] != null
-                                ? Image.network(
-                                    currentUser!['profile_image_url']!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        color: const Color(0xFF39AC86).withOpacity(0.1),
-                                        child: const Icon(
-                                          Icons.person,
-                                          size: 64,
-                                          color: Color(0xFF39AC86),
-                                        ),
-                                      );
-                                    },
-                                  )
-                                : Container(
-                                    color: const Color(0xFF39AC86).withOpacity(0.1),
-                                    child: const Icon(
-                                      Icons.person,
-                                      size: 64,
-                                      color: Color(0xFF39AC86),
-                                    ),
-                                  ),
+                            child: _buildProfileImage(currentUser),
                           ),
                         ),
-                        // Plant badge
+                        // Garden badge
                         Container(
                           width: 36,
                           height: 36,
@@ -455,7 +221,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     
                     // Name and Location
                     Text(
-                      currentUser?['name'] ?? 'User Name',
+                      currentUser?['name'] ?? 'Gardener',
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
@@ -477,9 +243,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: const Color(0xFF39AC86).withOpacity(0.2),
                             ),
                           ),
-                          child: const Text(
-                            'Gardener',
-                            style: TextStyle(
+                          child: Text(
+                            _gardens.isNotEmpty ? '${_gardens.length} Gardens' : 'Gardener',
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF39AC86),
@@ -509,7 +275,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     
                     // Bio
                     Text(
-                      currentUser?['bio'] ?? 'No bio yet. Add a bio to tell others about your garden!',
+                      currentUser?['bio'] ?? 'Welcome to your garden profile! Start by adding your first garden.',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 14,
@@ -538,6 +304,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               if (result == true) {
                                 // Profile was updated, refresh data
                                 await _loadProfileData();
+                                authProvider.initialize(); // Refresh auth provider
                               }
                             },
                             child: Container(
@@ -569,10 +336,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         
                         const SizedBox(width: 12),
                         
-                        // Share Button
+                        // Add Garden Button
                         GestureDetector(
                           onTap: () {
-                            _showShareOptions(context);
+                            // Navigate to add garden screen
+                            // Navigator.push(context, MaterialPageRoute(builder: (context) => AddGardenScreen()));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Add garden feature coming soon!'),
+                              ),
+                            );
                           },
                           child: Container(
                             width: 48,
@@ -585,7 +358,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                             child: const Icon(
-                              Icons.share,
+                              Icons.add,
                               color: Color(0xFF39AC86),
                             ),
                           ),
@@ -601,193 +374,95 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    // Shared
+                    // Shared (kg)
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isDarkMode ? const Color(0xFF2C3A35) : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isDarkMode ? Colors.white.withOpacity(0.05) : const Color(0xFFE5E3DF),
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.eco,
-                              color: const Color(0xFFD49D45),
-                              size: 24,
-                            ),
-                            const SizedBox(height: 8),
-                            RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: '${_stats['shared']}',
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w800,
-                                      color: isDarkMode ? Colors.white : Colors.black,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: 'kg',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w400,
-                                      color: isDarkMode ? Colors.white : Colors.black,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'SHARED',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF5C8A7A),
-                                letterSpacing: 1,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '+${(_stats['shared'] * 0.2).toInt()}kg',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF39AC86),
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: _buildImpactCard(
+                        context,
+                        icon: Icons.eco,
+                        iconColor: const Color(0xFFD49D45),
+                        value: '${_impactStats['sharedKg']}',
+                        unit: 'kg',
+                        label: 'SHARED',
+                        change: _impactStats['sharedChange'] != null 
+                            ? '+${_impactStats['sharedChange']}kg'
+                            : '+0kg',
                       ),
                     ),
                     
                     const SizedBox(width: 12),
                     
-                    // Helped
+                    // Helped (families)
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isDarkMode ? const Color(0xFF2C3A35) : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isDarkMode ? Colors.white.withOpacity(0.05) : const Color(0xFFE5E3DF),
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.group,
-                              color: const Color(0xFF39AC86),
-                              size: 24,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '${_stats['helped']}',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w800,
-                                color: isDarkMode ? Colors.white : Colors.black,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'HELPED',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF5C8A7A),
-                                letterSpacing: 1,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '+${(_stats['helped'] * 0.1).toInt()}',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF39AC86),
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: _buildImpactCard(
+                        context,
+                        icon: Icons.group,
+                        iconColor: const Color(0xFF39AC86),
+                        value: '${_impactStats['helpedCount']}',
+                        unit: '',
+                        label: 'HELPED',
+                        change: _impactStats['helpedChange'] != null 
+                            ? '+${_impactStats['helpedChange']}'
+                            : '+0',
                       ),
                     ),
                     
                     const SizedBox(width: 12),
                     
-                    // Saved
+                    // Saved CO2 (kg)
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isDarkMode ? const Color(0xFF2C3A35) : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isDarkMode ? Colors.white.withOpacity(0.05) : const Color(0xFFE5E3DF),
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.co2,
-                              color: const Color(0xFF3B82F6),
-                              size: 24,
-                            ),
-                            const SizedBox(height: 8),
-                            RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: '${_stats['saved']}',
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w800,
-                                      color: isDarkMode ? Colors.white : Colors.black,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: 'kg',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w400,
-                                      color: isDarkMode ? Colors.white : Colors.black,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'SAVED',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF5C8A7A),
-                                letterSpacing: 1,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '+${(_stats['saved'] * 0.1).toInt()}kg',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF39AC86),
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: _buildImpactCard(
+                        context,
+                        icon: Icons.co2,
+                        iconColor: const Color(0xFF3B82F6),
+                        value: '${_impactStats['savedCO2']}',
+                        unit: 'kg',
+                        label: 'CO2 SAVED',
+                        change: _impactStats['savedChange'] != null 
+                            ? '+${_impactStats['savedChange']}kg'
+                            : '+0kg',
                       ),
                     ),
                   ],
                 ),
               ),
+              
+              const SizedBox(height: 24),
+              
+              // My Gardens Section
+              if (_gardens.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'My Gardens',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'View All',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF39AC86),
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Gardens list
+                      ..._gardens.take(2).map((garden) => _buildGardenCard(context, garden)),
+                    ],
+                  ),
+                ),
               
               const SizedBox(height: 24),
               
@@ -801,18 +476,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Active Garden Crops',
+                          'Growing Now',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Text(
-                          'View Garden',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF39AC86),
+                        GestureDetector(
+                          onTap: () {
+                            // Navigate to crops screen
+                            // Navigator.push(context, MaterialPageRoute(builder: (context) => CropsScreen()));
+                          },
+                          child: Text(
+                            'View All',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF39AC86),
+                            ),
                           ),
                         ),
                       ],
@@ -820,7 +501,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     
                     const SizedBox(height: 16),
                     
-                    if (_gardenCrops.isEmpty)
+                    if (_activeCrops.isEmpty)
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
@@ -857,7 +538,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       )
                     else
-                      ..._gardenCrops.map((crop) => _buildCropCard(context, crop)),
+                      ..._activeCrops.map((crop) => _buildCropCard(context, crop)),
                   ],
                 ),
               ),
@@ -865,78 +546,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 32),
               
               // Sharing History
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Sharing History',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'See All',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: const Color(0xFF5C8A7A),
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    if (_sharingHistory.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: isDarkMode ? const Color(0xFF2C3A35) : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isDarkMode ? Colors.white.withOpacity(0.05) : const Color(0xFFE5E3DF),
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.share,
-                              color: const Color(0xFF39AC86).withOpacity(0.3),
-                              size: 48,
+              if (_sharingHistory.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Recently Shared',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(height: 12),
-                            const Text(
-                              'No sharing history yet',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          ),
+                          Text(
+                            'See All',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: const Color(0xFF5C8A7A),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Start sharing your harvest to build your impact!',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: const Color(0xFF5C8A7A),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      ..._sharingHistory.take(2).map((history) => _buildHistoryItem(context, history)),
-                  ],
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      ..._sharingHistory.take(2).map((crop) => _buildHistoryItem(context, crop)),
+                    ],
+                  ),
                 ),
-              ),
               
               const SizedBox(height: 24),
               
-              // Community Footprint
+              // Community Impact Card
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
@@ -968,7 +613,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Community Footprint',
+                              'Community Impact',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -976,7 +621,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Start sharing to see your community impact!',
+                              _impactStats['sharedKg'] > 0
+                                  ? 'You\'ve shared ${_impactStats['sharedKg']}kg of food!'
+                                  : 'Start sharing your harvest to help others!',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: const Color(0xFF5C8A7A),
@@ -1003,10 +650,183 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildProfileImage(Map<String, dynamic>? user) {
+    final imageUrl = user?['profile_image_url'];
+    
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildDefaultProfileIcon();
+        },
+      );
+    } else {
+      return _buildDefaultProfileIcon();
+    }
+  }
+
+  Widget _buildDefaultProfileIcon() {
+    return Container(
+      color: const Color(0xFF39AC86).withOpacity(0.1),
+      child: const Center(
+        child: Icon(
+          Icons.person,
+          size: 64,
+          color: Color(0xFF39AC86),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImpactCard(
+    BuildContext context, {
+    required IconData icon,
+    required Color iconColor,
+    required String value,
+    required String unit,
+    required String label,
+    required String change,
+  }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF2C3A35) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDarkMode ? Colors.white.withOpacity(0.05) : const Color(0xFFE5E3DF),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: iconColor,
+            size: 24,
+          ),
+          const SizedBox(height: 8),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: value,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                  ),
+                ),
+                if (unit.isNotEmpty) TextSpan(
+                  text: ' $unit',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF5C8A7A),
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            change,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF39AC86),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGardenCard(BuildContext context, Map<String, dynamic> garden) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final type = garden['type']?.toString().toUpperCase() ?? 'OUTDOOR';
+    final size = garden['size']?.toString().capitalize() ?? 'Medium';
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF2C3A35) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDarkMode ? Colors.white.withOpacity(0.05) : const Color(0xFFE5E3DF),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFF39AC86).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.eco,
+              color: Color(0xFF39AC86),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  garden['name'] ?? 'My Garden',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${size} ${type.toLowerCase()} garden',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF5C8A7A),
+                  ),
+                ),
+                if (garden['location'] != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    garden['location']!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF5C8A7A),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCropCard(BuildContext context, Map<String, dynamic> crop) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final progress = (crop['progress'] as num?)?.toDouble() ?? 0.5;
-    final progressPercent = (progress * 100).toInt();
+    final progress = (crop['progress'] as num?)?.toDouble() ?? 0.0;
+    final progressPercent = progress.toInt();
+    final status = crop['status']?.toString().capitalize() ?? 'Growing';
+    final category = crop['category']?.toString().capitalize() ?? 'Vegetable';
     
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1025,13 +845,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             height: 64,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              image: DecorationImage(
-                image: NetworkImage(
-                  crop['image_url'] ?? 'https://via.placeholder.com/64',
-                ),
-                fit: BoxFit.cover,
-              ),
+              color: const Color(0xFF39AC86).withOpacity(0.1),
+              image: crop['image_url'] != null
+                  ? DecorationImage(
+                      image: NetworkImage(crop['image_url']!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
+            child: crop['image_url'] == null
+                ? const Center(
+                    child: Icon(
+                      Icons.eco,
+                      color: Color(0xFF39AC86),
+                      size: 32,
+                    ),
+                  )
+                : null,
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -1067,9 +897,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  crop['days_to_harvest'] != null 
-                      ? '${crop['days_to_harvest']} days to harvest'
-                      : 'Growing...',
+                  '$status • $category',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF5C8A7A),
@@ -1083,7 +911,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: FractionallySizedBox(
-                    widthFactor: progress,
+                    widthFactor: progress / 100,
                     child: Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFF39AC86),
@@ -1100,8 +928,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildHistoryItem(BuildContext context, Map<String, dynamic> history) {
+  Widget _buildHistoryItem(BuildContext context, Map<String, dynamic> crop) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final date = crop['created_at'] != null
+        ? DateTime.parse(crop['created_at']).toLocal()
+        : DateTime.now();
+    final formattedDate = '${date.month}/${date.day}/${date.year}';
     
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1123,18 +955,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   color: const Color(0xFF39AC86).withOpacity(0.1),
+                  image: crop['image_url'] != null
+                      ? DecorationImage(
+                          image: NetworkImage(crop['image_url']!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                 ),
-                child: const Icon(
-                  Icons.eco,
-                  color: Color(0xFF39AC86),
-                ),
+                child: crop['image_url'] == null
+                    ? const Center(
+                        child: Icon(
+                          Icons.eco,
+                          color: Color(0xFF39AC86),
+                          size: 24,
+                        ),
+                      )
+                    : null,
               ),
               const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    history['item'] ?? 'Shared item',
+                    crop['name'] ?? 'Shared Item',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -1142,7 +985,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    history['date'] ?? 'Recently',
+                    'Shared on $formattedDate',
                     style: TextStyle(
                       fontSize: 12,
                       color: const Color(0xFF5C8A7A),
@@ -1163,6 +1006,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
+// Helper extension for string capitalization
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
+  }
+}
 
 
 
