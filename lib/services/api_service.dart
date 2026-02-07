@@ -480,29 +480,30 @@ class ApiService {
 }
 
 
-// In ApiService class, add these methods:
+// Add these methods to your ApiService (api_service.dart):
 
-// Get user profile from backend
-Future<Map<String, dynamic>> getUserProfile(String userId) async {
+// Get user profile data
+Future<Map<String, dynamic>> getUserProfile() async {
   try {
-    print('🔄 Getting user profile for: $userId');
-    print('🌐 URL: $baseUrl/api/users/$userId');
+    print('🔄 Getting user profile');
+    print('🌐 URL: $baseUrl/api/profile');
     
     final response = await http.get(
-      Uri.parse('$baseUrl/api/users/$userId'),
+      Uri.parse('$baseUrl/api/profile'),
       headers: _headers,
     );
 
     print('📥 Response status: ${response.statusCode}');
-    
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
+    print('📥 Response body: ${response.body}');
+
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
       return {
         'success': true,
-        'profile': data,
+        'profile': data['profile'],
       };
     } else {
-      final Map<String, dynamic> data = jsonDecode(response.body);
       return {
         'success': false,
         'error': data['error'] ?? 'Failed to fetch profile',
@@ -518,44 +519,111 @@ Future<Map<String, dynamic>> getUserProfile(String userId) async {
   }
 }
 
+// Get user's crops
+Future<Map<String, dynamic>> getUserCrops() async {
+  try {
+    print('🔄 Getting user crops');
+    print('🌐 URL: $baseUrl/api/crops');
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/crops'),
+      headers: _headers,
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return {
+        'success': true,
+        'crops': data['crops'] ?? [],
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to fetch crops',
+        'statusCode': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('❌ Get crops error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+// Get user's gardens
+Future<Map<String, dynamic>> getUserGardens() async {
+  try {
+    print('🔄 Getting user gardens');
+    print('🌐 URL: $baseUrl/api/gardens');
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/gardens'),
+      headers: _headers,
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return {
+        'success': true,
+        'gardens': data['gardens'] ?? [],
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to fetch gardens',
+        'statusCode': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('❌ Get gardens error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
 // Update user profile
 Future<Map<String, dynamic>> updateUserProfile({
-  required String name,
-  String? phone,
+  String? name,
   String? bio,
   String? location,
   String? gardenName,
   String? gardenSize,
-  String? profileImageUrl,
 }) async {
   try {
     print('🔄 Updating user profile');
-    print('🌐 URL: $baseUrl/api/users/update');
+    print('🌐 URL: $baseUrl/api/profile');
     
-    final Map<String, dynamic> updateData = {
-      'name': name,
-    };
+    final Map<String, dynamic> updateData = {};
     
-    if (phone != null) updateData['phone'] = phone;
+    if (name != null) updateData['name'] = name;
     if (bio != null) updateData['bio'] = bio;
     if (location != null) updateData['location'] = location;
     if (gardenName != null) updateData['garden_name'] = gardenName;
     if (gardenSize != null) updateData['garden_size'] = gardenSize;
-    if (profileImageUrl != null) updateData['profile_image_url'] = profileImageUrl;
     
     final response = await http.put(
-      Uri.parse('$baseUrl/api/users/update'),
+      Uri.parse('$baseUrl/api/profile'),
       headers: _headers,
       body: jsonEncode(updateData),
     );
 
     print('📥 Response status: ${response.statusCode}');
-    print('📥 Response: ${response.body}');
+    print('📥 Response body: ${response.body}');
     
     final Map<String, dynamic> data = jsonDecode(response.body);
     
-    if (response.statusCode == 200) {
-      // Update local user data
+    if (response.statusCode == 200 && data['success'] == true) {
+      // Update local user data in SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       final currentUserData = await getSavedUserData();
       
@@ -587,72 +655,35 @@ Future<Map<String, dynamic>> updateUserProfile({
   }
 }
 
-// Get user's sharing history
-Future<Map<String, dynamic>> getSharingHistory() async {
+// Get impact stats
+Future<Map<String, dynamic>> getImpactStats() async {
   try {
-    print('🔄 Getting sharing history');
-    print('🌐 URL: $baseUrl/api/users/sharing-history');
+    print('🔄 Getting impact stats');
+    print('🌐 URL: $baseUrl/api/profile/stats/impact');
     
     final response = await http.get(
-      Uri.parse('$baseUrl/api/users/sharing-history'),
+      Uri.parse('$baseUrl/api/profile/stats/impact'),
       headers: _headers,
     );
 
     print('📥 Response status: ${response.statusCode}');
     
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
       return {
         'success': true,
-        'history': data['history'] ?? [],
-        'stats': data['stats'] ?? {},
+        'impact': data['impact'] ?? {},
       };
     } else {
-      final Map<String, dynamic> data = jsonDecode(response.body);
       return {
         'success': false,
-        'error': data['error'] ?? 'Failed to fetch sharing history',
+        'error': data['error'] ?? 'Failed to fetch impact stats',
         'statusCode': response.statusCode,
       };
     }
   } catch (e) {
-    print('❌ Get sharing history error: $e');
-    return {
-      'success': false,
-      'error': 'Connection error: $e',
-    };
-  }
-}
-
-// Get user's garden crops
-Future<Map<String, dynamic>> getUserGardenCrops() async {
-  try {
-    print('🔄 Getting user garden crops');
-    print('🌐 URL: $baseUrl/api/users/garden-crops');
-    
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/users/garden-crops'),
-      headers: _headers,
-    );
-
-    print('📥 Response status: ${response.statusCode}');
-    
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return {
-        'success': true,
-        'crops': data['crops'] ?? [],
-      };
-    } else {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return {
-        'success': false,
-        'error': data['error'] ?? 'Failed to fetch garden crops',
-        'statusCode': response.statusCode,
-      };
-    }
-  } catch (e) {
-    print('❌ Get garden crops error: $e');
+    print('❌ Get impact stats error: $e');
     return {
       'success': false,
       'error': 'Connection error: $e',
