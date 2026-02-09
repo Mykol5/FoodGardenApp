@@ -36,7 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      // Load user profile
+      // Load user's profile
       final profileResult = await _apiService.getUserProfile();
       if (profileResult['success'] == true) {
         setState(() {
