@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CropsService {
-  static const String baseUrl = 'http://localhost:3000/api'; // Update with your actual backend URL
+  static const String baseUrl = 'https://foodsharingbackend.onrender.com/api'; // Update with your actual backend URL
 
   static Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
