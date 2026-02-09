@@ -267,12 +267,12 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
       
       if (_isEditMode) {
         // Update existing crop
-        final url = '${_apiService.baseUrl}/api/crops/${widget.existingCrop!['id']}';
+        final url = '${ApiService.baseUrl}/api/crops/${widget.existingCrop!['id']}';
         print('📤 PUT to: $url');
         
         final httpResponse = await http.put(
           Uri.parse(url),
-          headers: _apiService._headers,
+          headers: _apiService.headers,
           body: jsonEncode(cropData),
         );
         
@@ -280,12 +280,12 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
         print('📥 Update response: $response');
       } else {
         // Create new crop
-        final url = '${_apiService.baseUrl}/api/crops';
+        final url = '${ApiService.baseUrl}/api/crops';
         print('📤 POST to: $url');
         
         final httpResponse = await http.post(
           Uri.parse(url),
-          headers: _apiService._headers,
+          headers: _apiService.headers,
           body: jsonEncode(cropData),
         );
         
@@ -1244,8 +1244,6 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
     );
   }
 }
-
-
 
 
 
