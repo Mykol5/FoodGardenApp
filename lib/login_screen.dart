@@ -129,15 +129,34 @@ class _LoginScreenState extends State<LoginScreen> {
           name: _nameController.text.trim(),
           phone: _phoneController.text.trim(),
         );
-
+      
         if (result['success'] == true) {
-          // Success - navigate to main app
-          if (mounted) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => const MainLayout(),
-              ),
-            );
+          print('✅ Registration API call successful');
+          
+          // Wait a moment for the auth state to update
+          await Future.delayed(const Duration(milliseconds: 300));
+          
+          // Check auth state
+          if (authProvider.isAuthenticated) {
+            print('✅ User is authenticated after registration, navigating to home...');
+            if (mounted) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const MainLayout(),
+                ),
+              );
+            }
+          } else {
+            print('⚠️ User registered but not authenticated');
+            print('⚠️ isAuthenticated: ${authProvider.isAuthenticated}');
+            print('⚠️ ApiService isLoggedIn: ${_apiService.isLoggedIn}');
+            
+            // Fallback: Show success and switch to login mode
+            _showSuccess('Registration successful! Please login with your credentials.');
+            setState(() {
+              _isLogin = true;
+              _resetForm();
+            });
           }
         } else {
           _showError(result['error'] ?? 'Registration failed');
