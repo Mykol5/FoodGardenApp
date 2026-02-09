@@ -121,6 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
         } else {
           _showError(result['error'] ?? 'Login failed');
         }
+// In your LoginScreen's _handleAuth method, use this SIMPLE version:
       } else {
         // Register
         final result = await authProvider.register(
@@ -136,23 +137,32 @@ class _LoginScreenState extends State<LoginScreen> {
           // Wait a moment for the auth state to update
           await Future.delayed(const Duration(milliseconds: 300));
           
-          // Check auth state
-          if (authProvider.isAuthenticated) {
-            print('✅ User is authenticated after registration, navigating to home...');
+          // Check auth state from provider
+          final isAuthenticatedNow = authProvider.isAuthenticated;
+          print('🔍 After registration - isAuthenticated: $isAuthenticatedNow');
+          
+          if (isAuthenticatedNow && mounted) {
+            print('✅ User authenticated, navigating to MainLayout...');
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const MainLayout(),
+              ),
+            );
+          } else {
+            print('⚠️ User registered but not authenticated, showing success message');
+            
+            // Show success message
             if (mounted) {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => const MainLayout(),
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Registration successful! Please login with your credentials.'),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 3),
                 ),
               );
             }
-          } else {
-            print('⚠️ User registered but not authenticated');
-            print('⚠️ isAuthenticated: ${authProvider.isAuthenticated}');
-            print('⚠️ ApiService isLoggedIn: ${_apiService.isLoggedIn}');
             
-            // Fallback: Show success and switch to login mode
-            _showSuccess('Registration successful! Please login with your credentials.');
+            // Switch to login mode
             setState(() {
               _isLogin = true;
               _resetForm();
