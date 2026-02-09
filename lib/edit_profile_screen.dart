@@ -1,8 +1,15 @@
-// edit_profile_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/api_service.dart';
+import '../providers/auth_provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+  final Map<String, dynamic> userData;
+  
+  const EditProfileScreen({
+    super.key,
+    required this.userData,
+  });
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -14,16 +21,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _gardenNameController = TextEditingController();
   final TextEditingController _gardenSizeController = TextEditingController();
+  
+  final ApiService _apiService = ApiService();
+  bool _isLoading = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    // Set initial values
-    _fullNameController.text = 'Elena Rivers';
-    _bioController.text = 'Urban gardener and zero-waste advocate. Love sharing heirloom seeds and composting tips! 🌿✨';
-    _locationController.text = 'Portland, OR';
-    _gardenNameController.text = 'The Sunny Patch';
-    _gardenSizeController.text = '120';
+    // Set initial values from user data
+    _fullNameController.text = widget.userData['name'] ?? '';
+    _bioController.text = widget.userData['bio'] ?? '';
+    _locationController.text = widget.userData['location'] ?? '';
+    _gardenNameController.text = widget.userData['garden_name'] ?? '';
+    _gardenSizeController.text = widget.userData['garden_size']?.toString() ?? '';
   }
 
   @override
@@ -34,6 +45,91 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _gardenNameController.dispose();
     _gardenSizeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveProfile() async {
+    if (_fullNameController.text.isEmpty) {
+      _showError('Full name is required');
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final result = await _apiService.updateUserProfile(
+        name: _fullNameController.text.trim(),
+        bio: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
+        location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
+        gardenName: _gardenNameController.text.trim().isEmpty ? null : _gardenNameController.text.trim(),
+        gardenSize: _gardenSizeController.text.trim().isEmpty ? null : _gardenSizeController.text.trim(),
+      );
+
+      if (result['success'] == true) {
+        // Update local auth provider
+        final authProvider = context.read<AuthProvider>();
+        await authProvider.initialize(); // This will reload user data
+        
+        if (mounted) {
+          Navigator.pop(context, true); // Return true to indicate success
+        }
+      } else {
+        _showError(result['error'] ?? 'Failed to update profile');
+      }
+    } catch (e) {
+      _showError('Error: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  void _handleDeleteAccount() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text('Are you sure you want to delete your account? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              // TODO: Implement account deletion
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Account deletion feature coming soon'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -70,7 +166,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     child: const Icon(
                       Icons.arrow_back_ios_new,
                       size: 20,
-                      color: Color(0xFF19E6A2),
+                      color: Color(0xFF39AC86), // Updated to match your theme
                     ),
                   ),
                 ),
@@ -109,6 +205,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         GestureDetector(
                           onTap: () {
                             // Handle photo change
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Profile photo upload coming soon'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
                           },
                           child: Stack(
                             alignment: Alignment.bottomRight,
@@ -123,13 +225,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     color: isDarkMode ? const Color(0xFF2A3A35) : Colors.white,
                                     width: 4,
                                   ),
-                                  image: const DecorationImage(
-                                    image: NetworkImage(
-                                      'https://lh3.googleusercontent.com/aida-public/AB6AXuD6UxixynWk6qTgVwJECbnv6FPn9ijX15LNqb5v_nEPe1P4OGYQUv8VL-gQxmeQK5rUeu8BR24bu-nFfRZv9TRiTvF-RDxf0OpDWzb8w2QSirjVQifybWjEsnFJG6l5vqt3fSbOR70zzZ5-1tZdxk8YZdBlkBCugK3iPrus2h3D6N7-ZLfYG-9fW9ZNAtlrxTNKUtyWexue_LERuRbABo2fAVt6rIO-MWzp78wzH-WveMpq_usfjVSC3Efl6Vf5xA747FfmM9tjT1si',
-                                    ),
-                                    fit: BoxFit.cover,
-                                  ),
+                                  image: widget.userData['profile_image_url'] != null
+                                    ? DecorationImage(
+                                        image: NetworkImage(widget.userData['profile_image_url']!),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                                  color: widget.userData['profile_image_url'] == null
+                                    ? const Color(0xFF39AC86).withOpacity(0.1)
+                                    : null,
                                 ),
+                                child: widget.userData['profile_image_url'] == null
+                                  ? const Center(
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 64,
+                                        color: Color(0xFF39AC86),
+                                      ),
+                                    )
+                                  : null,
                               ),
                               
                               // Camera Icon
@@ -137,7 +251,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF19E6A2),
+                                  color: const Color(0xFF39AC86),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
                                     color: isDarkMode ? const Color(0xFF11211C) : Colors.white,
@@ -153,7 +267,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 ),
                                 child: const Icon(
                                   Icons.photo_camera,
-                                  color: Color(0xFF1A1A1A),
+                                  color: Colors.white,
                                   size: 20,
                                 ),
                               ),
@@ -167,13 +281,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         GestureDetector(
                           onTap: () {
                             // Handle photo change
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Profile photo upload coming soon'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
                           },
                           child: Text(
                             'Change Photo',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF19E6A2),
+                              color: const Color(0xFF39AC86),
                             ),
                           ),
                         ),
@@ -208,7 +328,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             Padding(
                               padding: const EdgeInsets.only(left: 4, bottom: 8),
                               child: Text(
-                                'Full Name',
+                                'Full Name *',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -251,7 +371,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             Padding(
                               padding: const EdgeInsets.only(left: 4, bottom: 8),
                               child: Text(
-                                'Bio',
+                                'Bio (Optional)',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -295,7 +415,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             Padding(
                               padding: const EdgeInsets.only(left: 4, bottom: 8),
                               child: Text(
-                                'Location',
+                                'Location (Optional)',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -330,31 +450,42 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   Positioned(
                                     right: 8,
                                     top: 8,
-                                    child: Container(
-                                      height: 40,
-                                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF19E6A2).withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.my_location,
-                                            size: 16,
-                                            color: Color(0xFF19E6A2),
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        // Use current location
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Location detection coming soon'),
+                                            backgroundColor: Colors.orange,
                                           ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'Current',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              color: const Color(0xFF19E6A2),
+                                        );
+                                      },
+                                      child: Container(
+                                        height: 40,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF39AC86).withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.my_location,
+                                              size: 16,
+                                              color: Color(0xFF39AC86),
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Current',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                                color: const Color(0xFF39AC86),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -377,7 +508,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         Padding(
                           padding: const EdgeInsets.only(left: 4, bottom: 12),
                           child: Text(
-                            'GARDEN DETAILS',
+                            'GARDEN DETAILS (OPTIONAL)',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -488,27 +619,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       children: [
-                        Container(
-                          width: double.infinity,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: isDarkMode 
-                                ? const Color(0xFF5A1A1A).withOpacity(0.1)
-                                : const Color(0xFFFEE2E2).withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
+                        GestureDetector(
+                          onTap: _handleDeleteAccount,
+                          child: Container(
+                            width: double.infinity,
+                            height: 56,
+                            decoration: BoxDecoration(
                               color: isDarkMode 
-                                  ? const Color(0xFF7F1D1D).withOpacity(0.3)
-                                  : const Color(0xFFFECACA),
+                                  ? const Color(0xFF5A1A1A).withOpacity(0.1)
+                                  : const Color(0xFFFEE2E2).withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isDarkMode 
+                                    ? const Color(0xFF7F1D1D).withOpacity(0.3)
+                                    : const Color(0xFFFECACA),
+                              ),
                             ),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Delete Account',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFFDC2626),
+                            child: const Center(
+                              child: Text(
+                                'Delete Account',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFFDC2626),
+                                ),
                               ),
                             ),
                           ),
@@ -544,24 +678,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           constraints: const BoxConstraints(maxWidth: 400),
           height: 56,
           decoration: BoxDecoration(
-            color: const Color(0xFF19E6A2),
+            color: _isSaving ? const Color(0xFF39AC86).withOpacity(0.7) : const Color(0xFF39AC86),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF19E6A2).withOpacity(0.4),
+                color: const Color(0xFF39AC86).withOpacity(0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: const Center(
-            child: Text(
-              'Save Changes',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A1A),
-              ),
+          child: GestureDetector(
+            onTap: _isSaving ? null : _saveProfile,
+            child: Center(
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      'Save Changes',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ),
         ),
