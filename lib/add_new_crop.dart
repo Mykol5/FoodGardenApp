@@ -217,121 +217,248 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
     }
   }
 
-  Future<void> _saveCrop() async {
-    // Validation
-    if (_cropNameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please enter a crop name'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
+  // Future<void> _saveCrop() async {
+  //   // Validation
+  //   if (_cropNameController.text.trim().isEmpty) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Please enter a crop name'),
+  //         backgroundColor: Colors.orange,
+  //       ),
+  //     );
+  //     return;
+  //   }
 
-    if (_selectedGardenId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please select a garden'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
+  //   if (_selectedGardenId == null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Please select a garden'),
+  //         backgroundColor: Colors.orange,
+  //       ),
+  //     );
+  //     return;
+  //   }
 
-    if (_quantityController.text.trim().isEmpty) {
-      _quantityController.text = '1';
-    }
+  //   if (_quantityController.text.trim().isEmpty) {
+  //     _quantityController.text = '1';
+  //   }
 
-    setState(() {
-      _isLoading = true;
-    });
+  //   setState(() {
+  //     _isLoading = true;
+  //   });
 
-    try {
-      final cropData = {
-        'garden_id': _selectedGardenId,
-        'name': _cropNameController.text.trim(),
-        'category': _categories[_selectedCategoryIndex]['value'],
-        'variety': _varietyController.text.trim().isEmpty ? null : _varietyController.text.trim(),
-        'planting_date': _plantingDate?.toIso8601String().split('T')[0],
-        'expected_harvest': _expectedHarvestDate?.toIso8601String().split('T')[0],
-        'status': _status,
-        'progress': _progress,
-        'notes': _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-        'quantity': int.tryParse(_quantityController.text.trim()) ?? 1,
-        'quantity_unit': _quantityUnit.isEmpty ? null : _quantityUnit,
-        'is_shared': false,
-      };
+  //   try {
+  //     final cropData = {
+  //       'garden_id': _selectedGardenId,
+  //       'name': _cropNameController.text.trim(),
+  //       'category': _categories[_selectedCategoryIndex]['value'],
+  //       'variety': _varietyController.text.trim().isEmpty ? null : _varietyController.text.trim(),
+  //       'planting_date': _plantingDate?.toIso8601String().split('T')[0],
+  //       'expected_harvest': _expectedHarvestDate?.toIso8601String().split('T')[0],
+  //       'status': _status,
+  //       'progress': _progress,
+  //       'notes': _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+  //       'quantity': int.tryParse(_quantityController.text.trim()) ?? 1,
+  //       'quantity_unit': _quantityUnit.isEmpty ? null : _quantityUnit,
+  //       'is_shared': false,
+  //     };
 
-      print('🔄 Saving crop data: $cropData');
+  //     print('🔄 Saving crop data: $cropData');
 
-      Map<String, dynamic> response;
+  //     Map<String, dynamic> response;
       
-      if (_isEditMode) {
-        // Update existing crop
-        // final url = '${ApiService.baseUrl}/api/crops/${widget.existingCrop!['id']}';
-        final url = '${_apiService.apiBaseUrl}/api/crops/${widget.existingCrop!['id']}';
-        print('📤 PUT to: $url');
+  //     if (_isEditMode) {
+  //       // Update existing crop
+  //       // final url = '${ApiService.baseUrl}/api/crops/${widget.existingCrop!['id']}';
+  //       final url = '${_apiService.apiBaseUrl}/api/crops/${widget.existingCrop!['id']}';
+  //       print('📤 PUT to: $url');
         
-        final httpResponse = await http.put(
-          Uri.parse(url),
-          headers: _apiService.headers,
-          body: jsonEncode(cropData),
-        );
+  //       final httpResponse = await http.put(
+  //         Uri.parse(url),
+  //         headers: _apiService.headers,
+  //         body: jsonEncode(cropData),
+  //       );
         
-        response = jsonDecode(httpResponse.body);
-        print('📥 Update response: $response');
-      } else {
-        // Create new crop
-        // final url = '${ApiService.baseUrl}/api/crops';
-        final url = '${_apiService.apiBaseUrl}/api/crops';
-        print('📤 POST to: $url');
+  //       response = jsonDecode(httpResponse.body);
+  //       print('📥 Update response: $response');
+  //     } else {
+  //       // Create new crop
+  //       // final url = '${ApiService.baseUrl}/api/crops';
+  //       final url = '${_apiService.apiBaseUrl}/api/crops';
+  //       print('📤 POST to: $url');
         
-        final httpResponse = await http.post(
-          Uri.parse(url),
-          headers: _apiService.headers,
-          body: jsonEncode(cropData),
-        );
+  //       final httpResponse = await http.post(
+  //         Uri.parse(url),
+  //         headers: _apiService.headers,
+  //         body: jsonEncode(cropData),
+  //       );
         
-        response = jsonDecode(httpResponse.body);
-        print('📥 Create response: $response');
-      }
+  //       response = jsonDecode(httpResponse.body);
+  //       print('📥 Create response: $response');
+  //     }
 
-      if (response['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message'] ?? 'Crop saved successfully'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
+  //     if (response['success'] == true) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text(response['message'] ?? 'Crop saved successfully'),
+  //           backgroundColor: Colors.green,
+  //           duration: Duration(seconds: 2),
+  //         ),
+  //       );
         
-        // Wait a bit before popping to show the success message
-        await Future.delayed(Duration(milliseconds: 800));
+  //       // Wait a bit before popping to show the success message
+  //       await Future.delayed(Duration(milliseconds: 800));
         
-        Navigator.pop(context, response['crop'] ?? true);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['error'] ?? 'Failed to save crop'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      print('❌ Save crop error: $e');
+  //       Navigator.pop(context, response['crop'] ?? true);
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text(response['error'] ?? 'Failed to save crop'),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     print('❌ Save crop error: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Error: $e'),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //   } finally {
+  //     setState(() {
+  //       _isLoading = false;
+  //     });
+  //   }
+  // }
+
+
+  Future<void> _saveCrop() async {
+  // Validation
+  if (_cropNameController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Please enter a crop name'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    return;
+  }
+
+  if (_selectedGardenId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Please select a garden'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    return;
+  }
+
+  if (_quantityController.text.trim().isEmpty) {
+    _quantityController.text = '1';
+  }
+
+  // Validate quantity is a number
+  final quantityValue = int.tryParse(_quantityController.text.trim());
+  if (quantityValue == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Please enter a valid quantity number'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    return;
+  }
+
+  setState(() {
+    _isLoading = true;
+  });
+
+  try {
+    final cropData = {
+      'garden_id': _selectedGardenId,
+      'name': _cropNameController.text.trim(),
+      'category': _categories[_selectedCategoryIndex]['value'],
+      'variety': _varietyController.text.trim().isEmpty ? null : _varietyController.text.trim(),
+      'planting_date': _plantingDate?.toIso8601String().split('T')[0],
+      'expected_harvest': _expectedHarvestDate?.toIso8601String().split('T')[0],
+      'status': _status,
+      'progress': _progress,
+      'notes': _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+      'quantity': quantityValue, // Use validated value
+      'quantity_unit': _quantityUnit.isEmpty ? null : _quantityUnit,
+      'is_shared': false,
+    };
+
+    print('🔄 Saving crop data: $cropData');
+
+    Map<String, dynamic> response;
+    
+    if (_isEditMode) {
+      // Update existing crop
+      final url = '${_apiService.apiBaseUrl}/api/crops/${widget.existingCrop!['id']}';
+      print('📤 PUT to: $url');
+      
+      final httpResponse = await http.put(
+        Uri.parse(url),
+        headers: _apiService.headers,
+        body: jsonEncode(cropData),
+      );
+      
+      response = jsonDecode(httpResponse.body);
+      print('📥 Update response: $response');
+    } else {
+      // Create new crop
+      final url = '${_apiService.apiBaseUrl}/api/crops';
+      print('📤 POST to: $url');
+      
+      final httpResponse = await http.post(
+        Uri.parse(url),
+        headers: _apiService.headers,
+        body: jsonEncode(cropData),
+      );
+      
+      response = jsonDecode(httpResponse.body);
+      print('📥 Create response: $response');
+    }
+
+    if (response['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: $e'),
+          content: Text(response['message'] ?? 'Crop saved successfully'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      
+      // Wait a bit before popping to show the success message
+      await Future.delayed(Duration(milliseconds: 800));
+      
+      Navigator.pop(context, response['crop'] ?? true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['error'] ?? 'Failed to save crop'),
           backgroundColor: Colors.red,
         ),
       );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
+  } catch (e) {
+    print('❌ Save crop error: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  } finally {
+    setState(() {
+      _isLoading = false;
+    });
   }
+}
 
   Future<void> _retryLoadGardens() async {
     await _loadGardens();
