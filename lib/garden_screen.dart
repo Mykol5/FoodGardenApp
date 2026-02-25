@@ -582,7 +582,8 @@ class _GardenScreenState extends State<GardenScreen> {
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => AllCropsScreen(crops: _crops),
+                  // builder: (context) => AllCropsScreen(crops: _crops),
+                  builder: (context) => AllCropsScreen(initialCrops: _crops),
                 ),
               );
             },
