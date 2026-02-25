@@ -424,7 +424,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     if (result == true) {
                       // Profile was updated, refresh data
                       await _refreshProfileData(showLoading: true);
-                      authProvider.initialize(); // Refresh auth provider
+                      // authProvider.initialize(); // Refresh auth provider
                     }
                   },
                   child: Container(
