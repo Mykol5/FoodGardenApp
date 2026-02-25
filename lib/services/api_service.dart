@@ -7,7 +7,7 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  // IMPORTANT: Uncomment the one you're using .. ok
+  // IMPORTANT: Uncomment the one you're using
   static const String baseUrl = 'https://foodsharingbackend.onrender.com'; // Production
   // static const String baseUrl = 'http://localhost:5000'; // Local development
   // static const String baseUrl = 'http://10.0.2.2:5000'; // Android emulator
@@ -15,8 +15,8 @@ class ApiService {
   String? _token;
   bool _isInitialized = false;
 
-  // PUBLIC GETTERS - ADD THESE
-  String get baseUrl => ApiService.baseUrl;
+  // PUBLIC GETTERS - FIXED NAMES
+  String get apiBaseUrl => ApiService.baseUrl;  // Changed from 'baseUrl' to 'apiBaseUrl'
   
   Map<String, String> get headers {
     Map<String, String> headers = {
@@ -778,7 +778,6 @@ class ApiService {
     }
   }
 }
-
 
 
 
