@@ -73,70 +73,122 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  Future<void> _uploadProfileImage() async {
-    if (_selectedImage == null) return;
+  // Future<void> _uploadProfileImage() async {
+  //   if (_selectedImage == null) return;
     
-    setState(() {
-      _isUploadingImage = true;
-    });
+  //   setState(() {
+  //     _isUploadingImage = true;
+  //   });
 
-    try {
-      // Create multipart request
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${ApiService.baseUrl}/api/profile/upload-image'),
-      );
+  //   try {
+  //     // Create multipart request
+  //     var request = http.MultipartRequest(
+  //       'POST',
+  //       Uri.parse('${ApiService.baseUrl}/api/profile/upload-image'),
+  //     );
       
-      // Add headers
-      request.headers.addAll(_apiService.headers);
+  //     // Add headers
+  //     request.headers.addAll(_apiService.headers);
       
-      // Add file
-      final file = await http.MultipartFile.fromPath('image', _selectedImage!.path);
-      request.files.add(file);
+  //     // Add file
+  //     final file = await http.MultipartFile.fromPath('image', _selectedImage!.path);
+  //     request.files.add(file);
       
-      // Send request
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+  //     // Send request
+  //     final streamedResponse = await request.send();
+  //     final response = await http.Response.fromStream(streamedResponse);
       
-      print('📥 Upload response status: ${response.statusCode}');
-      print('📥 Upload response body: ${response.body}');
+  //     print('📥 Upload response status: ${response.statusCode}');
+  //     print('📥 Upload response body: ${response.body}');
       
-      final Map<String, dynamic> data = jsonDecode(response.body);
+  //     final Map<String, dynamic> data = jsonDecode(response.body);
       
-      if (response.statusCode == 200 && data['success'] == true) {
-        setState(() {
-          _currentProfileImageUrl = data['imageUrl'];
-          _selectedImage = null; // Clear selected image after successful upload
-        });
+  //     if (response.statusCode == 200 && data['success'] == true) {
+  //       setState(() {
+  //         _currentProfileImageUrl = data['imageUrl'];
+  //         _selectedImage = null; // Clear selected image after successful upload
+  //       });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Profile photo updated successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(data['error'] ?? 'Failed to upload image'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      print('❌ Upload image error: $e');
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text('Profile photo updated successfully'),
+  //           backgroundColor: Colors.green,
+  //         ),
+  //       );
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text(data['error'] ?? 'Failed to upload image'),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     print('❌ Upload image error: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Error uploading image: $e'),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //   } finally {
+  //     setState(() {
+  //       _isUploadingImage = false;
+  //     });
+  //   }
+  // }
+
+  Future<void> _uploadProfileImage() async {
+  if (_selectedImage == null) return;
+  
+  setState(() {
+    _isUploadingImage = true;
+  });
+
+  try {
+    // Read file as bytes
+    final bytes = await _selectedImage!.readAsBytes();
+    // Convert to base64
+    final base64Image = base64Encode(bytes);
+    final fileName = _selectedImage!.path.split('/').last;
+
+    // Use the web upload method
+    final result = await _apiService.uploadImageWeb(base64Image, fileName);
+    
+    if (result['success'] == true) {
+      setState(() {
+        _currentProfileImageUrl = result['imageUrl'];
+        _selectedImage = null;
+      });
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error uploading image: $e'),
+          content: Text('Profile photo updated successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['error'] ?? 'Failed to upload image'),
           backgroundColor: Colors.red,
         ),
       );
-    } finally {
-      setState(() {
-        _isUploadingImage = false;
-      });
     }
+  } catch (e) {
+    print('❌ Upload image error: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error uploading image: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  } finally {
+    setState(() {
+      _isUploadingImage = false;
+    });
   }
+}
 
   Future<void> _removeProfileImage() async {
     if (_currentProfileImageUrl == null) return;
