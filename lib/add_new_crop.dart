@@ -816,7 +816,7 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
 
 Widget _buildImagePicker(bool isDarkMode) {
   return Padding(
-    padding: EdgeInsets.all(16),
+    padding: const EdgeInsets.all(16),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -825,106 +825,111 @@ Widget _buildImagePicker(bool isDarkMode) {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: isDarkMode ? Colors.white : Color(0xFF101816),
+            color: isDarkMode ? Colors.white : const Color(0xFF101816),
           ),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         GestureDetector(
           onTap: _isUploadingImage ? null : _pickImage,
           child: Container(
             height: 120,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: isDarkMode ? Color(0xFF2D3A35) : Colors.white,
+              color: isDarkMode ? const Color(0xFF2D3A35) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDarkMode ? Color(0xFF3A4A44) : Color(0xFFF0F2F1),
+                color: isDarkMode ? const Color(0xFF3A4A44) : const Color(0xFFF0F2F1),
               ),
             ),
-            child: _selectedImage != null
-                ? Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.file(
-                          _selectedImage!,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedImage = null;
-                            });
-                          },
-                          child: Container(
-                            padding: EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                : (_isUploadingImage
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF39AC86)),
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Uploading...',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF5C8A7A),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.add_photo_alternate,
-                            size: 40,
-                            color: Color(0xFF39AC86).withOpacity(0.5),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Tap to add photo',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF5C8A7A),
-                            ),
-                          ),
-                        ],
-                      ),
-                ),
+            child: _buildImageContent(isDarkMode),
           ),
         ),
       ],
     ),
   );
+}
+
+Widget _buildImageContent(bool isDarkMode) {
+  if (_selectedImage != null) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.file(
+            _selectedImage!,
+            fit: BoxFit.cover,
+          ),
+        ),
+        Positioned(
+          top: 8,
+          right: 8,
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedImage = null;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.close,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  } else if (_isUploadingImage) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(const Color(0xFF39AC86)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Uploading...',
+            style: TextStyle(
+              fontSize: 12,
+              color: const Color(0xFF5C8A7A),
+            ),
+          ),
+        ],
+      ),
+    );
+  } else {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.add_photo_alternate,
+          size: 40,
+          color: const Color(0xFF39AC86).withOpacity(0.5),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Tap to add photo',
+          style: TextStyle(
+            fontSize: 12,
+            color: const Color(0xFF5C8A7A),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
   Widget _buildCategorySection(bool isDarkMode) {
