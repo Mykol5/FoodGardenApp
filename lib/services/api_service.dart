@@ -463,6 +463,57 @@ class ApiService {
     }
   }
 
+
+
+  // Upload crop image
+Future<Map<String, dynamic>> uploadCropImage(String imagePath) async {
+  try {
+    print('🔄 Uploading crop image...');
+    
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/api/crops/upload-image'),
+    );
+    
+    // Add headers
+    request.headers.addAll(headers);
+    
+    // Add file
+    final file = await http.MultipartFile.fromPath('image', imagePath);
+    request.files.add(file);
+    
+    // Send request
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response body: ${response.body}');
+    
+    final Map<String, dynamic> data = jsonDecode(response.body);
+    
+    if (response.statusCode == 200 && data['success'] == true) {
+      return {
+        'success': true,
+        'imageUrl': data['imageUrl'],
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to upload image',
+      };
+    }
+  } catch (e) {
+    print('❌ Upload crop image error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+  
+
+  
+
   // Get impact stats
   Future<Map<String, dynamic>> getImpactStats() async {
     try {
