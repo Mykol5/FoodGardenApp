@@ -237,62 +237,107 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
     }
   }
 
+  // Future<String?> _uploadImage() async {
+  //   if (_selectedImage == null) return null;
+    
+  //   setState(() {
+  //     _isUploadingImage = true;
+  //   });
+    
+  //   try {
+  //     // Create multipart request
+  //     var request = http.MultipartRequest(
+  //       'POST',
+  //       Uri.parse('${ApiService.baseUrl}/api/crops/upload-image'),
+  //     );
+      
+  //     // Add headers
+  //     request.headers.addAll(_apiService.headers);
+      
+  //     // Add file
+  //     final file = await http.MultipartFile.fromPath('image', _selectedImage!.path);
+  //     request.files.add(file);
+      
+  //     // Send request
+  //     final streamedResponse = await request.send();
+  //     final response = await http.Response.fromStream(streamedResponse);
+      
+  //     print('📥 Upload response status: ${response.statusCode}');
+  //     print('📥 Upload response body: ${response.body}');
+      
+  //     final Map<String, dynamic> data = jsonDecode(response.body);
+      
+  //     if (response.statusCode == 200 && data['success'] == true) {
+  //       return data['imageUrl'];
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text(data['error'] ?? 'Failed to upload image'),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //       return null;
+  //     }
+  //   } catch (e) {
+  //     print('❌ Upload image error: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Error uploading image: $e'),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //     return null;
+  //   } finally {
+  //     setState(() {
+  //       _isUploadingImage = false;
+  //     });
+  //   }
+  // }
+
+
   Future<String?> _uploadImage() async {
-    if (_selectedImage == null) return null;
+  if (_selectedImage == null) return null;
+  
+  setState(() {
+    _isUploadingImage = true;
+  });
+  
+  try {
+    // Read file as bytes
+    final bytes = await _selectedImage!.readAsBytes();
+    // Convert to base64
+    final base64Image = base64Encode(bytes);
+    final fileName = _selectedImage!.path.split('/').last;
+
+    // Use the web upload method
+    final result = await _apiService.uploadImageWeb(base64Image, fileName);
     
-    setState(() {
-      _isUploadingImage = true;
-    });
-    
-    try {
-      // Create multipart request
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${ApiService.baseUrl}/api/crops/upload-image'),
-      );
-      
-      // Add headers
-      request.headers.addAll(_apiService.headers);
-      
-      // Add file
-      final file = await http.MultipartFile.fromPath('image', _selectedImage!.path);
-      request.files.add(file);
-      
-      // Send request
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-      
-      print('📥 Upload response status: ${response.statusCode}');
-      print('📥 Upload response body: ${response.body}');
-      
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      
-      if (response.statusCode == 200 && data['success'] == true) {
-        return data['imageUrl'];
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(data['error'] ?? 'Failed to upload image'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return null;
-      }
-    } catch (e) {
-      print('❌ Upload image error: $e');
+    if (result['success'] == true) {
+      return result['imageUrl'];
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error uploading image: $e'),
+          content: Text(result['error'] ?? 'Failed to upload image'),
           backgroundColor: Colors.red,
         ),
       );
       return null;
-    } finally {
-      setState(() {
-        _isUploadingImage = false;
-      });
     }
+  } catch (e) {
+    print('❌ Upload image error: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error uploading image: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return null;
+  } finally {
+    setState(() {
+      _isUploadingImage = false;
+    });
   }
+}
 
   Future<void> _saveCrop() async {
     // Validation
