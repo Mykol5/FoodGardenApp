@@ -299,6 +299,47 @@ class ApiService {
     }
   }
 
+  // For web - convert image to base64
+Future<Map<String, dynamic>> uploadImageWeb(String base64Image, String fileName) async {
+  try {
+    print('🔄 Uploading image via web...');
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/crops/upload-image'),
+      headers: headers,
+      body: jsonEncode({
+        'image': base64Image,
+        'fileName': fileName,
+      }),
+    );
+
+    print('📥 Upload response status: ${response.statusCode}');
+    print('📥 Upload response body: ${response.body}');
+
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return {
+        'success': true,
+        'imageUrl': data['imageUrl'],
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to upload image',
+      };
+    }
+  } catch (e) {
+    print('❌ Upload image error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+  
+
   // Get current user profile
   Future<Map<String, dynamic>> getCurrentUser() async {
     try {
