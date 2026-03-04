@@ -499,6 +499,7 @@ Future<Map<String, dynamic>> uploadProfileImageWeb(String base64Image, String fi
 
   // Update user profile
 // Update user profile
+// Update user profile
 Future<Map<String, dynamic>> updateUserProfile({
   String? name,
   String? bio,
@@ -545,13 +546,20 @@ Future<Map<String, dynamic>> updateUserProfile({
         
         await prefs.setString('user_data', jsonEncode(updatedUser));
         print('✅ User data updated locally');
+        
+        return {
+          'success': true,
+          'user': updatedUser,
+          'message': data['message'] ?? 'Profile updated successfully',
+        };
+      } else {
+        // If no current user data, just return the API response
+        return {
+          'success': true,
+          'user': data['user'] ?? updateData,
+          'message': data['message'] ?? 'Profile updated successfully',
+        };
       }
-      
-      return {
-        'success': true,
-        'user': data['user'] ?? {...currentUserData, ...updateData},
-        'message': data['message'] ?? 'Profile updated successfully',
-      };
     } else {
       return {
         'success': false,
@@ -567,7 +575,6 @@ Future<Map<String, dynamic>> updateUserProfile({
     };
   }
 }
-
 
 
   // Upload crop image
