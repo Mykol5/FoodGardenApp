@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'edit_profile_screen.dart';
-import 'add_garden_screen.dart'; // Make sure to import this
+import 'add_garden_screen.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 
@@ -32,6 +32,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   };
   List<dynamic> _gardens = [];
 
+  // Cache buster for images
+  int _imageVersion = 0;
+
   @override
   void initState() {
     super.initState();
@@ -41,8 +44,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Only reload if it's been more than 30 seconds since last load
-    // AND we're not already loading
     if (!_isFirstLoad && 
         !_isLoading && 
         !_isRefreshing &&
@@ -53,7 +54,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfileData({bool forceRefresh = false}) async {
-    // If we already have data and it's not a force refresh, just show cached data
     if (!forceRefresh && 
         !_isFirstLoad && 
         _profileData != null && 
@@ -78,10 +78,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _refreshProfileData({bool showLoading = true}) async {
-    if (_isRefreshing) return; // Prevent multiple refreshes
+    if (_isRefreshing) return;
 
+    print('🔄 REFRESHING PROFILE DATA');
     setState(() {
       _isRefreshing = showLoading;
+      _imageVersion++; // Increment cache buster
     });
 
     await _fetchProfileData();
@@ -94,7 +96,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _fetchProfileData() async {
     try {
-      // Load user's profile
       final profileResult = await _apiService.getUserProfile();
       if (profileResult['success'] == true) {
         setState(() {
@@ -102,7 +103,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
 
-      // Load crops
       final cropsResult = await _apiService.getUserCrops();
       if (cropsResult['success'] == true) {
         final allCrops = cropsResult['crops'] ?? [];
@@ -117,7 +117,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
 
-      // Load gardens
       final gardensResult = await _apiService.getUserGardens();
       if (gardensResult['success'] == true) {
         setState(() {
@@ -125,7 +124,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
 
-      // Load impact stats
       final impactResult = await _apiService.getImpactStats();
       if (impactResult['success'] == true) {
         setState(() {
@@ -136,7 +134,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       print('❌ Error loading profile data: $e');
       
-      // Fallback to data from AuthProvider
       final authProvider = context.read<AuthProvider>();
       final currentUser = authProvider.currentUser;
       if (currentUser != null) {
@@ -145,7 +142,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
 
-      // Show error snackbar
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -165,11 +161,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     
     return WillPopScope(
       onWillPop: () async {
-        // Handle back button properly
         if (Navigator.canPop(context)) {
           Navigator.pop(context, true);
         } else {
-          // If can't pop, navigate to home (you can change this to your home route)
           Navigator.pushReplacementNamed(context, '/');
         }
         return false;
@@ -187,36 +181,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: Column(
                       children: [
-                        // Top Navigation Bar - FIXED BACK BUTTON
                         _buildTopBar(isDarkMode),
-                        
-                        // Profile Header Section
                         _buildProfileHeader(context, currentUser, isDarkMode),
-                        
-                        // Impact Summary Dashboard
                         _buildImpactDashboard(context, isDarkMode),
-                        
                         const SizedBox(height: 24),
-                        
-                        // My Gardens Section
                         if (_gardens.isNotEmpty) _buildGardensSection(isDarkMode),
-                        
                         const SizedBox(height: 24),
-                        
-                        // Active Garden Crops
                         _buildActiveCropsSection(isDarkMode),
-                        
                         const SizedBox(height: 32),
-                        
-                        // Sharing History
                         if (_sharingHistory.isNotEmpty) _buildSharingHistorySection(isDarkMode),
-                        
                         const SizedBox(height: 24),
-                        
-                        // Community Impact Card
                         _buildCommunityImpactCard(isDarkMode),
-                        
-                        const SizedBox(height: 100), // Space for bottom navigation
+                        const SizedBox(height: 100),
                       ],
                     ),
                   ),
@@ -257,14 +233,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Back button - FIXED
           GestureDetector(
             onTap: () {
-              // Properly navigate back
               if (Navigator.canPop(context)) {
                 Navigator.pop(context, true);
               } else {
-                // If can't pop, go to home (you can change this)
                 Navigator.pushReplacementNamed(context, '/');
               }
             },
@@ -282,7 +255,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
-          // Title with refresh indicator
           Row(
             children: [
               const Text(
@@ -305,7 +277,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ],
           ),
-          // Empty container for spacing
           Container(width: 40, height: 40),
         ],
       ),
@@ -317,7 +288,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Column(
         children: [
-          // Profile Picture - FETCHES FROM DATABASE
           Stack(
             alignment: Alignment.bottomRight,
             children: [
@@ -336,7 +306,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: _buildProfileImage(currentUser),
                 ),
               ),
-              // Garden badge
               Container(
                 width: 36,
                 height: 36,
@@ -359,7 +328,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           
           const SizedBox(height: 16),
           
-          // Name and Location
           Text(
             currentUser?['name'] ?? 'Gardener',
             style: const TextStyle(
@@ -370,7 +338,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           
           const SizedBox(height: 8),
           
-          // Badges and Location
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -413,7 +380,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           
           const SizedBox(height: 16),
           
-          // Bio
           Text(
             currentUser?['bio'] ?? 'Welcome to your garden profile! Start by adding your first garden.',
             textAlign: TextAlign.center,
@@ -425,11 +391,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           
           const SizedBox(height: 16),
           
-          // Action Buttons
           Row(
             children: [
-              // Edit Profile Button
-              // Edit Profile Button
               Expanded(
                 child: GestureDetector(
                   onTap: () async {
@@ -443,17 +406,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     );
                     
                     if (result != null) {
-                      print('🔄 Returning from EditProfileScreen');
-                      
-                      // If the result contains a new image URL, update it immediately
-                      if (result is Map && result['imageUpdated'] == true) {
-                        setState(() {
-                          // Force a refresh of the profile data
-                          _lastLoadTime = null; // Reset cache
-                        });
-                      }
-                      
-                      // Always refresh to get the latest data
+                      print('🔄 Returning from EditProfileScreen, refreshing...');
+                      setState(() {
+                        _lastLoadTime = null; // Reset cache
+                        _imageVersion++; // Force image reload
+                      });
                       await _refreshProfileData(showLoading: true);
                     }
                   },
@@ -486,7 +443,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               
               const SizedBox(width: 12),
               
-              // Add Garden Button
               GestureDetector(
                 onTap: () async {
                   final result = await Navigator.push(
@@ -497,7 +453,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                   
                   if (result != null) {
-                    // Garden was added, refresh profile data
                     await _refreshProfileData(showLoading: true);
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -537,7 +492,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          // Shared (kg)
           Expanded(
             child: _buildImpactCard(
               context,
@@ -551,10 +505,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   : '+0kg',
             ),
           ),
-          
           const SizedBox(width: 12),
-          
-          // Helped (families)
           Expanded(
             child: _buildImpactCard(
               context,
@@ -568,10 +519,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   : '+0',
             ),
           ),
-          
           const SizedBox(width: 12),
-          
-          // Saved CO2 (kg)
           Expanded(
             child: _buildImpactCard(
               context,
@@ -608,7 +556,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               GestureDetector(
                 onTap: () {
-                  // Navigate to gardens list screen
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Gardens list coming soon!')),
                   );
@@ -624,10 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ),
-          
           const SizedBox(height: 16),
-          
-          // Gardens list
           ..._gardens.take(2).map((garden) => _buildGardenCard(context, garden)),
         ],
       ),
@@ -652,7 +596,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               GestureDetector(
                 onTap: () {
-                  // Navigate to crops screen
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Crops list coming soon!')),
                   );
@@ -668,9 +611,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ),
-          
           const SizedBox(height: 16),
-          
           if (_activeCrops.isEmpty)
             _buildEmptyState(isDarkMode)
           else
@@ -743,9 +684,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ),
-          
           const SizedBox(height: 16),
-          
           ..._sharingHistory.take(2).map((crop) => _buildHistoryItem(context, crop)),
         ],
       ),
@@ -814,20 +753,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ============= Helper Widget Methods =============
+  // ============= UPDATED HELPER WIDGET METHODS =============
 
   Widget _buildProfileImage(Map<String, dynamic>? user) {
     final imageUrl = user?['profile_image_url'];
     
     if (imageUrl != null && imageUrl.isNotEmpty) {
+      // Add cache buster to force reload
+      final cacheBuster = '?v=$_imageVersion';
+      final imageUrlWithCache = imageUrl + cacheBuster;
+      
+      print('🖼️ Loading image: $imageUrlWithCache');
+      
       return Image.network(
-        imageUrl,
+        imageUrlWithCache,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
+          print('❌ Image load error: $error');
           return _buildDefaultProfileIcon();
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            color: const Color(0xFF39AC86).withOpacity(0.1),
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                    : null,
+                color: const Color(0xFF39AC86),
+              ),
+            ),
+          );
         },
       );
     } else {
+      print('🖼️ No image URL, showing default');
       return _buildDefaultProfileIcon();
     }
   }
@@ -918,6 +879,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+  // ... rest of your card building methods remain the same ...
+  // (_buildGardenCard, _buildCropCard, _buildHistoryItem)
 
   Widget _buildGardenCard(BuildContext context, Map<String, dynamic> garden) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -1178,8 +1142,6 @@ extension StringExtension on String {
     return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 }
-
-
 
 
 // import 'package:flutter/material.dart';
