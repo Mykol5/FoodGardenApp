@@ -642,259 +642,272 @@ class _GardenScreenState extends State<GardenScreen> {
     );
   }
 
-  Widget _buildCropCard(BuildContext context, Map<String, dynamic> crop, bool isDarkMode) {
-    final progress = (crop['progress'] as num?)?.toDouble() ?? 0.0;
-    final status = crop['status'] ?? 'seedling';
-    final name = crop['name'] ?? 'Crop';
-    final category = crop['category'] ?? 'vegetable';
-    final imageUrl = crop['image_url'];
-    
-    Color progressColor;
-    Color statusBgColor;
-    String statusLabel;
-    IconData buttonIcon;
-    String buttonText;
-    bool buttonEnabled;
-    
-    switch (status) {
-      case 'harvest':
-        progressColor = const Color(0xFFE59866);
-        statusBgColor = const Color(0xFFE59866);
-        statusLabel = 'READY';
-        buttonIcon = Icons.cut;
-        buttonText = 'Harvest Now';
-        buttonEnabled = true;
-        break;
-      case 'fruiting':
-        progressColor = const Color(0xFF39AC86);
-        statusBgColor = const Color(0xFF39AC86);
-        statusLabel = 'FRUITING';
-        buttonIcon = Icons.water_drop;
-        buttonText = 'Water';
-        buttonEnabled = false;
-        break;
-      case 'flowering':
-        progressColor = const Color(0xFFE59866);
-        statusBgColor = const Color(0xFFE59866);
-        statusLabel = 'FLOWERING';
-        buttonIcon = Icons.timer;
-        buttonText = 'Developing';
-        buttonEnabled = false;
-        break;
-      case 'vegetative':
-        progressColor = const Color(0xFF4299E1);
-        statusBgColor = const Color(0xFF4299E1);
-        statusLabel = 'GROWING';
-        buttonIcon = Icons.water_drop;
-        buttonText = 'Water';
-        buttonEnabled = false;
-        break;
-      default:
-        progressColor = Colors.grey;
-        statusBgColor = Colors.grey;
-        statusLabel = status.toUpperCase();
-        buttonIcon = Icons.timer;
-        buttonText = 'Seedling';
-        buttonEnabled = false;
-    }
-    
-    return Container(
-      width: 240,
-      decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF2D3A35) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDarkMode 
-              ? const Color(0xFF3A4A44) 
-              : const Color(0xFFF0F2F1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+Widget _buildCropCard(BuildContext context, Map<String, dynamic> crop, bool isDarkMode) {
+  // Safely extract values with null checks
+  final progress = (crop['progress'] as num?)?.toDouble() ?? 0.0;
+  final status = crop['status']?.toString() ?? 'seedling';
+  final name = crop['name']?.toString() ?? 'Unnamed Crop';
+  final category = crop['category']?.toString() ?? 'vegetable';
+  final imageUrl = crop['image_url']?.toString();
+  
+  // Debug print
+  print('🎨 Building card for: $name');
+  print('   - status: $status');
+  print('   - imageUrl exists: ${imageUrl != null}');
+  
+  // Safely determine colors and labels
+  Color progressColor;
+  Color statusBgColor;
+  String statusLabel;
+  IconData buttonIcon;
+  String buttonText;
+  bool buttonEnabled;
+  
+  switch (status) {
+    case 'harvest':
+      progressColor = const Color(0xFFE59866);
+      statusBgColor = const Color(0xFFE59866);
+      statusLabel = 'READY';
+      buttonIcon = Icons.cut;
+      buttonText = 'Harvest Now';
+      buttonEnabled = true;
+      break;
+    case 'fruiting':
+      progressColor = const Color(0xFF39AC86);
+      statusBgColor = const Color(0xFF39AC86);
+      statusLabel = 'FRUITING';
+      buttonIcon = Icons.water_drop;
+      buttonText = 'Water';
+      buttonEnabled = false;
+      break;
+    case 'flowering':
+      progressColor = const Color(0xFFE59866);
+      statusBgColor = const Color(0xFFE59866);
+      statusLabel = 'FLOWERING';
+      buttonIcon = Icons.timer;
+      buttonText = 'Developing';
+      buttonEnabled = false;
+      break;
+    case 'vegetative':
+      progressColor = const Color(0xFF4299E1);
+      statusBgColor = const Color(0xFF4299E1);
+      statusLabel = 'GROWING';
+      buttonIcon = Icons.water_drop;
+      buttonText = 'Water';
+      buttonEnabled = false;
+      break;
+    default:
+      progressColor = Colors.grey;
+      statusBgColor = Colors.grey;
+      statusLabel = status.toUpperCase();
+      buttonIcon = Icons.timer;
+      buttonText = 'Seedling';
+      buttonEnabled = false;
+  }
+  
+  return Container(
+    width: 240,
+    decoration: BoxDecoration(
+      color: isDarkMode ? const Color(0xFF2D3A35) : Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(
+        color: isDarkMode 
+            ? const Color(0xFF3A4A44) 
+            : const Color(0xFFF0F2F1),
       ),
-      child: Column(
-        children: [
-          // Image Section
-          SizedBox(
-            height: 128,
-            width: double.infinity,
-            child: Stack(
-              children: [
-                // Crop Image
-                if (imageUrl != null && imageUrl.isNotEmpty)
-                  Positioned.fill(
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                      ),
-                      child: Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          print('❌ Failed to load image: $imageUrl');
-                          print('❌ Error: $error');
-                          return Container(
-                            color: const Color(0xFF39AC86).withOpacity(0.1),
-                            child: Center(
-                              child: Icon(
-                                Icons.broken_image,
-                                size: 48,
-                                color: const Color(0xFF39AC86).withOpacity(0.3),
-                              ),
-                            ),
-                          );
-                        },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            color: const Color(0xFF39AC86).withOpacity(0.1),
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                    : null,
-                                color: const Color(0xFF39AC86),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  )
-                else
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF39AC86).withOpacity(0.1),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                      ),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.eco,
-                        size: 48,
-                        color: const Color(0xFF39AC86).withOpacity(0.3),
-                      ),
-                    ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 8,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Column(
+      children: [
+        // Image Section - FIXED with null safety
+        SizedBox(
+          height: 128,
+          width: double.infinity,
+          child: Stack(
+            children: [
+              // Crop Image
+              if (imageUrl != null && imageUrl.isNotEmpty)
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
-                
-                // Status Badge
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: statusBgColor.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      statusLabel,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: 128,
+                    errorBuilder: (context, error, stackTrace) {
+                      print('❌ Failed to load image: $imageUrl');
+                      print('❌ Error: $error');
+                      return Container(
+                        width: double.infinity,
+                        height: 128,
+                        color: const Color(0xFF39AC86).withOpacity(0.1),
+                        child: Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 48,
+                            color: const Color(0xFF39AC86).withOpacity(0.3),
+                          ),
+                        ),
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        width: double.infinity,
+                        height: 128,
+                        color: const Color(0xFF39AC86).withOpacity(0.1),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                : null,
+                            color: const Color(0xFF39AC86),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
-              ],
-            ),
-          ),
-          // Content Section
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  category.capitalize(),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDarkMode ? Colors.white70 : const Color(0xFF666666),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Progress Bar
-                Container(
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF3A4A44) : const Color(0xFFF0F2F1),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: progress / 100,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: progressColor,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Action Button
+                )
+              else
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  height: 128,
                   decoration: BoxDecoration(
-                    color: buttonEnabled
-                        ? const Color(0xFF39AC86)
-                        : (isDarkMode ? const Color(0xFF3A4A44) : const Color(0xFFF0F2F1)),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: buttonEnabled
-                        ? [
-                            BoxShadow(
-                              color: const Color(0xFF39AC86).withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ]
-                        : null,
+                    color: const Color(0xFF39AC86).withOpacity(0.1),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        buttonIcon,
-                        size: 16,
-                        color: buttonEnabled ? Colors.white : const Color(0xFF999999),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        buttonText,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: buttonEnabled ? Colors.white : const Color(0xFF999999),
-                        ),
-                      ),
-                    ],
+                  child: Center(
+                    child: Icon(
+                      Icons.eco,
+                      size: 48,
+                      color: const Color(0xFF39AC86).withOpacity(0.3),
+                    ),
                   ),
                 ),
-              ],
-            ),
+              
+              // Status Badge
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: statusBgColor.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+        // Content Section
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                category.capitalize(),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDarkMode ? Colors.white70 : const Color(0xFF666666),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Progress Bar
+              Container(
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDarkMode ? const Color(0xFF3A4A44) : const Color(0xFFF0F2F1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: progress / 100,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: progressColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Action Button
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: buttonEnabled
+                      ? const Color(0xFF39AC86)
+                      : (isDarkMode ? const Color(0xFF3A4A44) : const Color(0xFFF0F2F1)),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: buttonEnabled
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF39AC86).withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      buttonIcon,
+                      size: 16,
+                      color: buttonEnabled ? Colors.white : const Color(0xFF999999),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      buttonText,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: buttonEnabled ? Colors.white : const Color(0xFF999999),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildProductivityHeader(bool isDarkMode) {
     return Padding(
