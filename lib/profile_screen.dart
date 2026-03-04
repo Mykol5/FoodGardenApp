@@ -429,6 +429,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Row(
             children: [
               // Edit Profile Button
+              // Edit Profile Button
               Expanded(
                 child: GestureDetector(
                   onTap: () async {
@@ -442,7 +443,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     );
                     
                     if (result != null) {
-                      print('🔄 Returning from EditProfileScreen, refreshing profile data');
+                      print('🔄 Returning from EditProfileScreen');
+                      
+                      // If the result contains a new image URL, update it immediately
+                      if (result is Map && result['imageUpdated'] == true) {
+                        setState(() {
+                          // Force a refresh of the profile data
+                          _lastLoadTime = null; // Reset cache
+                        });
+                      }
+                      
+                      // Always refresh to get the latest data
                       await _refreshProfileData(showLoading: true);
                     }
                   },
