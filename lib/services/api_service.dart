@@ -341,12 +341,13 @@ Future<Map<String, dynamic>> uploadImageWeb(String base64Image, String fileName)
 }
 
 // For profile image upload (web version)
+// For profile image upload (web version)
 Future<Map<String, dynamic>> uploadProfileImageWeb(String base64Image, String fileName) async {
   try {
     print('🔄 Uploading profile image via web...');
     
     final response = await http.post(
-      Uri.parse('$baseUrl/api/profile/upload-image-web'), // You'll need to add this endpoint too
+      Uri.parse('$baseUrl/api/profile/upload-image-web'),
       headers: headers,
       body: jsonEncode({
         'image': base64Image,
@@ -360,9 +361,24 @@ Future<Map<String, dynamic>> uploadProfileImageWeb(String base64Image, String fi
     final Map<String, dynamic> data = jsonDecode(response.body);
 
     if (response.statusCode == 200 && data['success'] == true) {
+      // Update local user data in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final currentUserData = await getSavedUserData();
+      
+      if (currentUserData != null) {
+        // Update the profile_image_url in the saved user data
+        final updatedUser = {
+          ...currentUserData,
+          'profile_image_url': data['imageUrl'],
+        };
+        await prefs.setString('user_data', jsonEncode(updatedUser));
+        print('✅ User profile image updated locally');
+      }
+      
       return {
         'success': true,
         'imageUrl': data['imageUrl'],
+        'user': data['user'], // Make sure your backend returns the updated user
       };
     } else {
       return {
@@ -482,68 +498,75 @@ Future<Map<String, dynamic>> uploadProfileImageWeb(String base64Image, String fi
   }
 
   // Update user profile
-  Future<Map<String, dynamic>> updateUserProfile({
-    String? name,
-    String? bio,
-    String? location,
-    String? gardenName,
-    String? gardenSize,
-  }) async {
-    try {
-      print('🔄 Updating user profile');
-      print('🌐 URL: $baseUrl/api/profile');
-      
-      final Map<String, dynamic> updateData = {};
-      
-      if (name != null) updateData['name'] = name;
-      if (bio != null) updateData['bio'] = bio;
-      if (location != null) updateData['location'] = location;
-      if (gardenName != null) updateData['garden_name'] = gardenName;
-      if (gardenSize != null) updateData['garden_size'] = gardenSize;
-      
-      final response = await http.put(
-        Uri.parse('$baseUrl/api/profile'),
-        headers: headers,
-        body: jsonEncode(updateData),
-      );
+// Update user profile
+Future<Map<String, dynamic>> updateUserProfile({
+  String? name,
+  String? bio,
+  String? location,
+  String? gardenName,
+  String? gardenSize,
+}) async {
+  try {
+    print('🔄 Updating user profile');
+    print('🌐 URL: $baseUrl/api/profile');
+    
+    final Map<String, dynamic> updateData = {};
+    
+    if (name != null) updateData['name'] = name;
+    if (bio != null) updateData['bio'] = bio;
+    if (location != null) updateData['location'] = location;
+    if (gardenName != null) updateData['garden_name'] = gardenName;
+    if (gardenSize != null) updateData['garden_size'] = gardenSize;
+    
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/profile'),
+      headers: headers,
+      body: jsonEncode(updateData),
+    );
 
-      print('📥 Response status: ${response.statusCode}');
-      print('📥 Response body: ${response.body}');
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response body: ${response.body}');
+    
+    final Map<String, dynamic> data = jsonDecode(response.body);
+    
+    if (response.statusCode == 200 && data['success'] == true) {
+      // Update local user data in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final currentUserData = await getSavedUserData();
       
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      
-      if (response.statusCode == 200 && data['success'] == true) {
-        // Update local user data in SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        final currentUserData = await getSavedUserData();
+      if (currentUserData != null) {
+        // Merge updates
+        final updatedUser = {...currentUserData, ...updateData};
         
-        if (currentUserData != null) {
-          // Merge updates
-          final updatedUser = {...currentUserData, ...updateData};
-          await prefs.setString('user_data', jsonEncode(updatedUser));
-          print('✅ User data updated locally');
+        // Also update profile_image_url if it was changed in another request
+        if (data['user'] != null && data['user']['profile_image_url'] != null) {
+          updatedUser['profile_image_url'] = data['user']['profile_image_url'];
         }
         
-        return {
-          'success': true,
-          'user': data['user'],
-          'message': data['message'] ?? 'Profile updated successfully',
-        };
-      } else {
-        return {
-          'success': false,
-          'error': data['error'] ?? 'Failed to update profile',
-          'statusCode': response.statusCode,
-        };
+        await prefs.setString('user_data', jsonEncode(updatedUser));
+        print('✅ User data updated locally');
       }
-    } catch (e) {
-      print('❌ Update profile error: $e');
+      
+      return {
+        'success': true,
+        'user': data['user'] ?? {...currentUserData, ...updateData},
+        'message': data['message'] ?? 'Profile updated successfully',
+      };
+    } else {
       return {
         'success': false,
-        'error': 'Connection error: $e',
+        'error': data['error'] ?? 'Failed to update profile',
+        'statusCode': response.statusCode,
       };
     }
+  } catch (e) {
+    print('❌ Update profile error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
   }
+}
 
 
 
