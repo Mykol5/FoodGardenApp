@@ -48,7 +48,6 @@ class _GardenScreenState extends State<GardenScreen> {
   }
 
   Future<void> _loadGardenData({bool forceRefresh = false}) async {
-    // Check cache (2 minutes for garden screen)
     if (!forceRefresh && 
         _lastLoadTime != null && 
         DateTime.now().difference(_lastLoadTime!) < const Duration(minutes: 2)) {
@@ -75,7 +74,7 @@ class _GardenScreenState extends State<GardenScreen> {
 
     setState(() {
       _isRefreshing = true;
-      _imageVersion++; // Increment cache buster for images
+      _imageVersion++;
     });
 
     await _fetchGardenData();
@@ -88,7 +87,6 @@ class _GardenScreenState extends State<GardenScreen> {
 
   Future<void> _fetchGardenData() async {
     try {
-      // Get user data from AuthProvider
       final authProvider = context.read<AuthProvider>();
       _userData = authProvider.currentUser;
 
@@ -96,10 +94,15 @@ class _GardenScreenState extends State<GardenScreen> {
       final cropsResult = await _apiService.getUserCrops();
       if (cropsResult['success'] == true) {
         final allCrops = cropsResult['crops'] ?? [];
+        
+        // Debug print to verify image URLs
+        for (var crop in allCrops) {
+          print('🌱 Crop: ${crop['name']}, Image URL: ${crop['image_url']}');
+        }
+        
         setState(() {
           _crops = allCrops;
           
-          // Calculate stats
           _activeCropsCount = allCrops.where((crop) => 
             crop['status'] != 'harvest' && (crop['progress'] ?? 0) < 100
           ).length;
@@ -108,12 +111,10 @@ class _GardenScreenState extends State<GardenScreen> {
             crop['status'] == 'harvest' || (crop['progress'] ?? 0) >= 100
           ).length;
           
-          // Calculate shared this week
           _sharedThisWeek = allCrops.where((crop) => 
             crop['is_shared'] == true
           ).fold(0, (sum, crop) => sum + (crop['quantity'] ?? 0).toDouble());
           
-          // Calculate total yield
           _totalYield = allCrops.fold(0, (sum, crop) => sum + (crop['quantity'] ?? 0).toDouble());
         });
       }
@@ -648,9 +649,6 @@ class _GardenScreenState extends State<GardenScreen> {
     final category = crop['category'] ?? 'vegetable';
     final imageUrl = crop['image_url'];
     
-    // Add cache buster to image URL
-    final imageUrlWithCache = imageUrl != null ? '$imageUrl?v=$_imageVersion' : null;
-    
     Color progressColor;
     Color statusBgColor;
     String statusLabel;
@@ -727,33 +725,65 @@ class _GardenScreenState extends State<GardenScreen> {
             child: Stack(
               children: [
                 // Crop Image
-                Container(
-                  decoration: BoxDecoration(
-                    image: imageUrlWithCache != null
-                        ? DecorationImage(
-                            image: NetworkImage(imageUrlWithCache),
-                            fit: BoxFit.cover,
-                            onError: (exception, stackTrace) {
-                              print('❌ Error loading image: $imageUrlWithCache');
-                            },
-                          )
-                        : null,
-                    color: const Color(0xFF39AC86).withOpacity(0.1),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
+                if (imageUrl != null && imageUrl.isNotEmpty)
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          print('❌ Failed to load image: $imageUrl');
+                          print('❌ Error: $error');
+                          return Container(
+                            color: const Color(0xFF39AC86).withOpacity(0.1),
+                            child: Center(
+                              child: Icon(
+                                Icons.broken_image,
+                                size: 48,
+                                color: const Color(0xFF39AC86).withOpacity(0.3),
+                              ),
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: const Color(0xFF39AC86).withOpacity(0.1),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                    : null,
+                                color: const Color(0xFF39AC86),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF39AC86).withOpacity(0.1),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.eco,
+                        size: 48,
+                        color: const Color(0xFF39AC86).withOpacity(0.3),
+                      ),
                     ),
                   ),
-                  child: imageUrlWithCache == null
-                      ? Center(
-                          child: Icon(
-                            Icons.eco,
-                            size: 48,
-                            color: const Color(0xFF39AC86).withOpacity(0.3),
-                          ),
-                        )
-                      : null,
-                ),
+                
                 // Status Badge
                 Positioned(
                   top: 12,
