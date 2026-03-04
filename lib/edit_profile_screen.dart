@@ -77,64 +77,66 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  Future<void> _uploadProfileImage() async {
-    if (_selectedImage == null || _selectedImageBytes == null) return;
+Future<void> _uploadProfileImage() async {
+  if (_selectedImage == null || _selectedImageBytes == null) return;
+  
+  setState(() {
+    _isUploadingImage = true;
+  });
+
+  try {
+    // Convert image to base64 for web upload
+    final base64Image = base64Encode(_selectedImageBytes!);
+    final fileName = _selectedImage!.name;
+
+    // Use the profile image web upload method
+    final result = await _apiService.uploadProfileImageWeb(base64Image, fileName);
     
-    setState(() {
-      _isUploadingImage = true;
-    });
-
-    try {
-      // Convert image to base64 for web upload
-      final base64Image = base64Encode(_selectedImageBytes!);
-      final fileName = _selectedImage!.name; // Use name instead of path for web
-
-      // Use the web upload method from ApiService
-      final result = await _apiService.uploadImageWeb(base64Image, fileName);
+    if (result['success'] == true) {
+      setState(() {
+        _currentProfileImageUrl = result['imageUrl'];
+        _selectedImage = null;
+        _selectedImageBytes = null;
+      });
       
-      if (result['success'] == true) {
-        setState(() {
-          _currentProfileImageUrl = result['imageUrl'];
-          _selectedImage = null;
-          _selectedImageBytes = null;
-        });
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile photo updated successfully'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['error'] ?? 'Failed to upload image'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile photo updated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
-    } catch (e) {
-      print('❌ Upload image error: $e');
+    } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error uploading image: $e'),
+            content: Text(result['error'] ?? 'Failed to upload image'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUploadingImage = false;
-        });
-      }
+    }
+  } catch (e) {
+    print('❌ Upload image error: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error uploading image: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isUploadingImage = false;
+      });
     }
   }
+}
+
+  
 
   Future<void> _removeProfileImage() async {
     if (_currentProfileImageUrl == null) return;
