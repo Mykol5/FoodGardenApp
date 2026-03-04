@@ -77,19 +77,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-Future<void> _uploadProfileImage() async {
-  if (_selectedImage == null || _selectedImageBytes == null) return;
+
+// Update _uploadProfileImage to return bool
+Future<bool> _uploadProfileImage() async {
+  if (_selectedImage == null || _selectedImageBytes == null) return false;
   
   setState(() {
     _isUploadingImage = true;
   });
 
   try {
-    // Convert image to base64 for web upload
     final base64Image = base64Encode(_selectedImageBytes!);
     final fileName = _selectedImage!.name;
 
-    // Use the profile image web upload method
     final result = await _apiService.uploadProfileImageWeb(base64Image, fileName);
     
     if (result['success'] == true) {
@@ -107,6 +107,7 @@ Future<void> _uploadProfileImage() async {
           ),
         );
       }
+      return true;
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -116,6 +117,7 @@ Future<void> _uploadProfileImage() async {
           ),
         );
       }
+      return false;
     }
   } catch (e) {
     print('❌ Upload image error: $e');
@@ -127,6 +129,7 @@ Future<void> _uploadProfileImage() async {
         ),
       );
     }
+    return false;
   } finally {
     if (mounted) {
       setState(() {
@@ -135,6 +138,67 @@ Future<void> _uploadProfileImage() async {
     }
   }
 }
+
+
+  
+// Future<void> _uploadProfileImage() async {
+//   if (_selectedImage == null || _selectedImageBytes == null) return;
+  
+//   setState(() {
+//     _isUploadingImage = true;
+//   });
+
+//   try {
+//     // Convert image to base64 for web upload
+//     final base64Image = base64Encode(_selectedImageBytes!);
+//     final fileName = _selectedImage!.name;
+
+//     // Use the profile image web upload method
+//     final result = await _apiService.uploadProfileImageWeb(base64Image, fileName);
+    
+//     if (result['success'] == true) {
+//       setState(() {
+//         _currentProfileImageUrl = result['imageUrl'];
+//         _selectedImage = null;
+//         _selectedImageBytes = null;
+//       });
+      
+//       if (mounted) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           const SnackBar(
+//             content: Text('Profile photo updated successfully'),
+//             backgroundColor: Colors.green,
+//           ),
+//         );
+//       }
+//     } else {
+//       if (mounted) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(
+//             content: Text(result['error'] ?? 'Failed to upload image'),
+//             backgroundColor: Colors.red,
+//           ),
+//         );
+//       }
+//     }
+//   } catch (e) {
+//     print('❌ Upload image error: $e');
+//     if (mounted) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Error uploading image: $e'),
+//           backgroundColor: Colors.red,
+//         ),
+//       );
+//     }
+//   } finally {
+//     if (mounted) {
+//       setState(() {
+//         _isUploadingImage = false;
+//       });
+//     }
+//   }
+// }
 
   
 
@@ -197,52 +261,66 @@ Future<void> _uploadProfileImage() async {
     }
   }
 
-  Future<void> _saveProfile() async {
-    if (_fullNameController.text.isEmpty) {
-      _showError('Full name is required');
-      return;
+Future<void> _saveProfile() async {
+  if (_fullNameController.text.isEmpty) {
+    _showError('Full name is required');
+    return;
+  }
+
+  setState(() {
+    _isSaving = true;
+  });
+
+  try {
+    // Track if image was uploaded successfully
+    bool imageUploaded = false;
+    String? newImageUrl;
+
+    // First upload image if selected
+    if (_selectedImage != null) {
+      final uploadResult = await _uploadProfileImage();
+      if (uploadResult) {
+        imageUploaded = true;
+        // Get the new image URL from the result
+        newImageUrl = _currentProfileImageUrl;
+      }
     }
 
-    setState(() {
-      _isSaving = true;
-    });
+    // Then update profile data
+    final result = await _apiService.updateUserProfile(
+      name: _fullNameController.text.trim(),
+      bio: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
+      location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
+      gardenName: _gardenNameController.text.trim().isEmpty ? null : _gardenNameController.text.trim(),
+      gardenSize: _gardenSizeController.text.trim().isEmpty ? null : _gardenSizeController.text.trim(),
+    );
 
-    try {
-      // First upload image if selected
-      if (_selectedImage != null) {
-        await _uploadProfileImage();
-      }
-
-      // Then update profile data
-      final result = await _apiService.updateUserProfile(
-        name: _fullNameController.text.trim(),
-        bio: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
-        location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
-        gardenName: _gardenNameController.text.trim().isEmpty ? null : _gardenNameController.text.trim(),
-        gardenSize: _gardenSizeController.text.trim().isEmpty ? null : _gardenSizeController.text.trim(),
-      );
-
-      if (result['success'] == true) {
-        // Update local auth provider
-        final authProvider = context.read<AuthProvider>();
-        await authProvider.initialize(); // This will reload user data
-        
-        if (mounted) {
-          Navigator.pop(context, true); // Return true to indicate success
-        }
-      } else {
-        _showError(result['error'] ?? 'Failed to update profile');
-      }
-    } catch (e) {
-      _showError('Error: $e');
-    } finally {
+    if (result['success'] == true) {
+      // Update local auth provider
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.initialize(); // This will reload user data
+      
       if (mounted) {
-        setState(() {
-          _isSaving = false;
+        // Return a map with success and updated data
+        Navigator.pop(context, {
+          'success': true,
+          'imageUpdated': imageUploaded,
+          'newImageUrl': newImageUrl,
         });
       }
+    } else {
+      _showError(result['error'] ?? 'Failed to update profile');
+    }
+  } catch (e) {
+    _showError('Error: $e');
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isSaving = false;
+      });
     }
   }
+}
 
   void _showImageOptions() {
     showModalBottomSheet(
