@@ -1,12 +1,10 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:food_sharing_app/services/api_service.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'dart:typed_data';
 
 class AddNewCropScreen extends StatefulWidget {
   final String? gardenId;
@@ -30,8 +28,9 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
   bool _isEditMode = false;
   bool _loadGardensError = false;
   
-  // Image related variables
-  File? _selectedImage;
+  // Image related variables - UPDATED FOR WEB
+  XFile? _selectedImage;
+  Uint8List? _selectedImageBytes;
   bool _isUploadingImage = false;
   
   final TextEditingController _varietyController = TextEditingController();
@@ -97,10 +96,8 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
     super.initState();
     _isEditMode = widget.existingCrop != null;
     
-    // Initialize quantity controller
     _quantityController.text = '1';
     
-    // Load data
     _initializeData();
   }
 
@@ -119,7 +116,6 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
     
     _cropNameController.text = crop['name'] ?? '';
     
-    // Find category index
     final categoryValue = crop['category'] ?? 'vegetable';
     final categoryIndex = _categories.indexWhere((cat) => cat['value'] == categoryValue);
     if (categoryIndex != -1) {
@@ -166,7 +162,6 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
         setState(() {
           _gardens = List<Map<String, dynamic>>.from(result['gardens'] ?? []);
           
-          // If no garden is selected yet and we have gardens, select the first one
           if (_selectedGardenId == null && _gardens.isNotEmpty) {
             _selectedGardenId = _gardens[0]['id'];
           }
@@ -200,7 +195,6 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
       setState(() {
         _plantingDate = picked;
         
-        // Auto-calculate harvest date (30 days after planting)
         if (_expectedHarvestDate == null) {
           _expectedHarvestDate = picked.add(Duration(days: 30));
         }
@@ -233,116 +227,61 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
     );
     
     if (image != null) {
+      final bytes = await image.readAsBytes();
       setState(() {
-        _selectedImage = File(image.path);
+        _selectedImage = image;
+        _selectedImageBytes = bytes;
       });
     }
   }
 
-  // Future<String?> _uploadImage() async {
-  //   if (_selectedImage == null) return null;
-    
-  //   setState(() {
-  //     _isUploadingImage = true;
-  //   });
-    
-  //   try {
-  //     // Create multipart request
-  //     var request = http.MultipartRequest(
-  //       'POST',
-  //       Uri.parse('${ApiService.baseUrl}/api/crops/upload-image'),
-  //     );
-      
-  //     // Add headers
-  //     request.headers.addAll(_apiService.headers);
-      
-  //     // Add file
-  //     final file = await http.MultipartFile.fromPath('image', _selectedImage!.path);
-  //     request.files.add(file);
-      
-  //     // Send request
-  //     final streamedResponse = await request.send();
-  //     final response = await http.Response.fromStream(streamedResponse);
-      
-  //     print('📥 Upload response status: ${response.statusCode}');
-  //     print('📥 Upload response body: ${response.body}');
-      
-  //     final Map<String, dynamic> data = jsonDecode(response.body);
-      
-  //     if (response.statusCode == 200 && data['success'] == true) {
-  //       return data['imageUrl'];
-  //     } else {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //           content: Text(data['error'] ?? 'Failed to upload image'),
-  //           backgroundColor: Colors.red,
-  //         ),
-  //       );
-  //       return null;
-  //     }
-  //   } catch (e) {
-  //     print('❌ Upload image error: $e');
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text('Error uploading image: $e'),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //     return null;
-  //   } finally {
-  //     setState(() {
-  //       _isUploadingImage = false;
-  //     });
-  //   }
-  // }
-
-
   Future<String?> _uploadImage() async {
-  if (_selectedImage == null) return null;
-  
-  setState(() {
-    _isUploadingImage = true;
-  });
-  
-  try {
-    // Read file as bytes
-    final bytes = await _selectedImage!.readAsBytes();
-    // Convert to base64
-    final base64Image = base64Encode(bytes);
-    final fileName = _selectedImage!.path.split('/').last;
-
-    // Use the web upload method
-    final result = await _apiService.uploadImageWeb(base64Image, fileName);
+    if (_selectedImage == null || _selectedImageBytes == null) return null;
     
-    if (result['success'] == true) {
-      return result['imageUrl'];
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['error'] ?? 'Failed to upload image'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return null;
-    }
-  } catch (e) {
-    print('❌ Upload image error: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error uploading image: $e'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return null;
-  } finally {
     setState(() {
-      _isUploadingImage = false;
+      _isUploadingImage = true;
     });
+    
+    try {
+      final base64Image = base64Encode(_selectedImageBytes!);
+      final fileName = _selectedImage!.name;
+
+      final result = await _apiService.uploadImageWeb(base64Image, fileName);
+      
+      if (result['success'] == true) {
+        return result['imageUrl'];
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['error'] ?? 'Failed to upload image'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return null;
+      }
+    } catch (e) {
+      print('❌ Upload image error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error uploading image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return null;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingImage = false;
+        });
+      }
+    }
   }
-}
 
   Future<void> _saveCrop() async {
-    // Validation
     if (_cropNameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -367,7 +306,6 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
       _quantityController.text = '1';
     }
 
-    // Validate quantity is a number
     final quantityValue = int.tryParse(_quantityController.text.trim());
     if (quantityValue == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -384,17 +322,9 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
     });
 
     try {
-      // First upload image if selected
       String? imageUrl;
       if (_selectedImage != null) {
         imageUrl = await _uploadImage();
-        if (imageUrl == null && _selectedImage != null) {
-          // Image upload failed but user selected an image
-          setState(() {
-            _isLoading = false;
-          });
-          return;
-        }
       }
 
       final cropData = {
@@ -409,7 +339,7 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
         'notes': _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         'quantity': quantityValue,
         'quantity_unit': _quantityUnit.isEmpty ? null : _quantityUnit,
-        'image_url': imageUrl, // Add the uploaded image URL
+        'image_url': imageUrl,
         'is_shared': false,
       };
 
@@ -418,7 +348,6 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
       Map<String, dynamic> response;
       
       if (_isEditMode) {
-        // Update existing crop
         final url = '${ApiService.baseUrl}/api/crops/${widget.existingCrop!['id']}';
         print('📤 PUT to: $url');
         
@@ -431,7 +360,6 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
         response = jsonDecode(httpResponse.body);
         print('📥 Update response: $response');
       } else {
-        // Create new crop
         final url = '${ApiService.baseUrl}/api/crops';
         print('📤 POST to: $url');
         
@@ -446,38 +374,47 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
       }
 
       if (response['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message'] ?? 'Crop saved successfully'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? 'Crop saved successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
         
-        // Wait a bit before popping to show the success message
         await Future.delayed(Duration(milliseconds: 800));
         
-        Navigator.pop(context, response['crop'] ?? true);
+        if (mounted) {
+          Navigator.pop(context, response['crop'] ?? true);
+        }
       } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['error'] ?? 'Failed to save crop'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('❌ Save crop error: $e');
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['error'] ?? 'Failed to save crop'),
+            content: Text('Error: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      print('❌ Save crop error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -504,7 +441,6 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
         bottom: false,
         child: Column(
           children: [
-            // Top App Bar
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
@@ -519,7 +455,6 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
               ),
               child: Row(
                 children: [
-                  // Close Button
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(
@@ -529,7 +464,6 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
                     ),
                   ),
                   
-                  // Title
                   Expanded(
                     child: Center(
                       child: Text(
@@ -543,7 +477,6 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
                     ),
                   ),
                   
-                  // Save Button
                   _isLoading
                       ? Padding(
                           padding: EdgeInsets.symmetric(horizontal: 16),
@@ -571,7 +504,6 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
               ),
             ),
 
-            // Main Content
             Expanded(
               child: _isLoading && _gardens.isEmpty
                   ? Center(
@@ -598,31 +530,14 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Crop Name Input
                               _buildCropNameInput(isDarkMode),
-                              
-                              // Garden Selection
                               _buildGardenSelection(isDarkMode),
-                              
-                              // Image Picker
                               _buildImagePicker(isDarkMode),
-                              
-                              // Category Section
                               _buildCategorySection(isDarkMode),
-                              
-                              // Crop Variety Input
                               _buildVarietyInput(isDarkMode),
-                              
-                              // Timeline Section
                               _buildTimelineSection(isDarkMode),
-                              
-                              // Status and Progress
                               _buildStatusSection(isDarkMode),
-                              
-                              // Quantity Section
                               _buildQuantitySection(isDarkMode),
-                              
-                              // Notes Section
                               _buildNotesSection(isDarkMode),
                             ],
                           ),
@@ -632,7 +547,6 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
         ),
       ),
       
-      // Bottom CTA Button
       bottomSheet: Container(
         color: isDarkMode 
             ? Color(0xFF212C28).withOpacity(0.9)
@@ -861,123 +775,124 @@ class _AddNewCropScreenState extends State<AddNewCropScreen> {
     );
   }
 
-Widget _buildImagePicker(bool isDarkMode) {
-  return Padding(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Crop Image (Optional)',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: isDarkMode ? Colors.white : const Color(0xFF101816),
-          ),
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: _isUploadingImage ? null : _pickImage,
-          child: Container(
-            height: 120,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF2D3A35) : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDarkMode ? const Color(0xFF3A4A44) : const Color(0xFFF0F2F1),
-              ),
-            ),
-            child: _buildImageContent(isDarkMode),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildImageContent(bool isDarkMode) {
-  if (_selectedImage != null) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.file(
-            _selectedImage!,
-            fit: BoxFit.cover,
-          ),
-        ),
-        Positioned(
-          top: 8,
-          right: 8,
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedImage = null;
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.close,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  } else if (_isUploadingImage) {
-    return Center(
+  Widget _buildImagePicker(bool isDarkMode) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(const Color(0xFF39AC86)),
+          Text(
+            'Crop Image (Optional)',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: isDarkMode ? Colors.white : const Color(0xFF101816),
             ),
           ),
           const SizedBox(height: 8),
+          GestureDetector(
+            onTap: _isUploadingImage ? null : _pickImage,
+            child: Container(
+              height: 120,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: isDarkMode ? const Color(0xFF2D3A35) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDarkMode ? const Color(0xFF3A4A44) : const Color(0xFFF0F2F1),
+                ),
+              ),
+              child: _buildImageContent(isDarkMode),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageContent(bool isDarkMode) {
+    if (_selectedImageBytes != null) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.memory(
+              _selectedImageBytes!,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedImage = null;
+                  _selectedImageBytes = null;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (_isUploadingImage) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(const Color(0xFF39AC86)),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Uploading...',
+              style: TextStyle(
+                fontSize: 12,
+                color: const Color(0xFF5C8A7A),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.add_photo_alternate,
+            size: 40,
+            color: const Color(0xFF39AC86).withOpacity(0.5),
+          ),
+          const SizedBox(height: 8),
           Text(
-            'Uploading...',
+            'Tap to add photo',
             style: TextStyle(
               fontSize: 12,
               color: const Color(0xFF5C8A7A),
             ),
           ),
         ],
-      ),
-    );
-  } else {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.add_photo_alternate,
-          size: 40,
-          color: const Color(0xFF39AC86).withOpacity(0.5),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Tap to add photo',
-          style: TextStyle(
-            fontSize: 12,
-            color: const Color(0xFF5C8A7A),
-          ),
-        ),
-      ],
-    );
+      );
+    }
   }
-}
 
   Widget _buildCategorySection(bool isDarkMode) {
     return Padding(
@@ -995,7 +910,6 @@ Widget _buildImageContent(bool isDarkMode) {
           ),
           SizedBox(height: 16),
           
-          // Category Grid
           GridView.builder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
@@ -1138,7 +1052,6 @@ Widget _buildImageContent(bool isDarkMode) {
           ),
           SizedBox(height: 16),
           
-          // Planting Date Card
           _buildTimelineCard(
             isDarkMode,
             icon: Icons.calendar_today,
@@ -1151,7 +1064,6 @@ Widget _buildImageContent(bool isDarkMode) {
           
           SizedBox(height: 12),
           
-          // Expected Harvest Card
           _buildTimelineCard(
             isDarkMode,
             icon: Icons.thermostat_auto,
@@ -1284,7 +1196,6 @@ Widget _buildImageContent(bool isDarkMode) {
           ),
           SizedBox(height: 16),
           
-          // Status Selection
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -1315,7 +1226,6 @@ Widget _buildImageContent(bool isDarkMode) {
           
           SizedBox(height: 16),
           
-          // Progress Slider
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -1389,7 +1299,6 @@ Widget _buildImageContent(bool isDarkMode) {
           
           Row(
             children: [
-              // Quantity Input
               Expanded(
                 child: Container(
                   height: 56,
@@ -1432,7 +1341,6 @@ Widget _buildImageContent(bool isDarkMode) {
               
               SizedBox(width: 12),
               
-              // Unit Dropdown
               Container(
                 width: 120,
                 height: 56,
