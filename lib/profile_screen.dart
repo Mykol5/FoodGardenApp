@@ -159,6 +159,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final currentUser = authProvider.currentUser ?? _profileData;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
+    // Show loading during refresh if we don't have data
+    if (_isRefreshing && currentUser == null) {
+      return Scaffold(
+        backgroundColor: isDarkMode ? const Color(0xFF212C28) : const Color(0xFFF9F8F6),
+        body: Center(
+          child: CircularProgressIndicator(color: const Color(0xFF39AC86)),
+        ),
+      );
+    }
+    
     return WillPopScope(
       onWillPop: () async {
         if (Navigator.canPop(context)) {
@@ -284,6 +294,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileHeader(BuildContext context, Map<String, dynamic>? currentUser, bool isDarkMode) {
+    // Don't render full header if user data is null during refresh
+    if (currentUser == null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: const Center(
+          child: CircularProgressIndicator(color: Color(0xFF39AC86)),
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Column(
@@ -329,7 +349,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 16),
           
           Text(
-            currentUser?['name'] ?? 'Gardener',
+            currentUser['name'] ?? 'Gardener',
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w800,
@@ -359,7 +379,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-              if (currentUser?['location'] != null) ...[
+              if (currentUser['location'] != null) ...[
                 const SizedBox(width: 8),
                 const Icon(
                   Icons.location_on,
@@ -368,7 +388,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  currentUser!['location']!,
+                  currentUser['location']!,
                   style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF5C8A7A),
@@ -381,7 +401,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 16),
           
           Text(
-            currentUser?['bio'] ?? 'Welcome to your garden profile! Start by adding your first garden.',
+            currentUser['bio'] ?? 'Welcome to your garden profile! Start by adding your first garden.',
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 14,
@@ -400,7 +420,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => EditProfileScreen(
-                          userData: currentUser ?? {},
+                          userData: currentUser,
                         ),
                       ),
                     );
@@ -755,8 +775,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ============= UPDATED HELPER WIDGET METHODS =============
 
-  Widget _buildProfileImage(Map<String, dynamic>? user) {
-    final imageUrl = user?['profile_image_url'];
+  Widget _buildProfileImage(Map<String, dynamic> user) {
+    final imageUrl = user['profile_image_url'];
     
     if (imageUrl != null && imageUrl.isNotEmpty) {
       // Add cache buster to force reload
@@ -788,7 +808,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       );
     } else {
-      print('🖼️ No image URL, showing default');
+      print('🖼️ No image URL for user: ${user['name']}');
       return _buildDefaultProfileIcon();
     }
   }
@@ -879,9 +899,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-
-  // ... rest of your card building methods remain the same ...
-  // (_buildGardenCard, _buildCropCard, _buildHistoryItem)
 
   Widget _buildGardenCard(BuildContext context, Map<String, dynamic> garden) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -1142,7 +1159,6 @@ extension StringExtension on String {
     return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 }
-
 
 // import 'package:flutter/material.dart';
 // import 'package:provider/provider.dart';
