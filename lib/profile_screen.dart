@@ -441,8 +441,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     );
                     
-                    if (result == true) {
-                      // Profile was updated, refresh data
+                    if (result != null) {
+                      print('🔄 Returning from EditProfileScreen, refreshing profile data');
                       await _refreshProfileData(showLoading: true);
                     }
                   },
