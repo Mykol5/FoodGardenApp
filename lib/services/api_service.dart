@@ -300,12 +300,14 @@ class ApiService {
   }
 
   // For web - convert image to base64
+// For web - upload image as base64
 Future<Map<String, dynamic>> uploadImageWeb(String base64Image, String fileName) async {
   try {
-    print('🔄 Uploading image via web...');
+    print('🔄 Uploading image via web (base64)...');
+    print('📤 Base64 length: ${base64Image.length}');
     
     final response = await http.post(
-      Uri.parse('$baseUrl/api/crops/upload-image'),
+      Uri.parse('$baseUrl/api/crops/upload-image-web'), // Note the new endpoint
       headers: headers,
       body: jsonEncode({
         'image': base64Image,
@@ -331,6 +333,45 @@ Future<Map<String, dynamic>> uploadImageWeb(String base64Image, String fileName)
     }
   } catch (e) {
     print('❌ Upload image error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+// For profile image upload (web version)
+Future<Map<String, dynamic>> uploadProfileImageWeb(String base64Image, String fileName) async {
+  try {
+    print('🔄 Uploading profile image via web...');
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/profile/upload-image-web'), // You'll need to add this endpoint too
+      headers: headers,
+      body: jsonEncode({
+        'image': base64Image,
+        'fileName': fileName,
+      }),
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response body: ${response.body}');
+
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return {
+        'success': true,
+        'imageUrl': data['imageUrl'],
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to upload image',
+      };
+    }
+  } catch (e) {
+    print('❌ Upload error: $e');
     return {
       'success': false,
       'error': 'Connection error: $e',
