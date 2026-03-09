@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'add_new_crop.dart';
-import 'all_crops_screen.dart'; // ADD THIS IMPORT
+import 'all_crops_screen.dart'; // ← THIS IMPORT IS MISSING
 import '../services/api_service.dart';
 import '../providers/auth_provider.dart';
 import 'dart:async';
@@ -779,7 +779,7 @@ class _GardenScreenState extends State<GardenScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _capitalize(category), // FIXED: changed from category.capitalize()
+                  _capitalize(category),
                   style: TextStyle(
                     fontSize: 12,
                     color: isDarkMode ? Colors.white70 : const Color(0xFF666666),
@@ -1046,7 +1046,6 @@ class _GardenScreenState extends State<GardenScreen> {
     return s[0].toUpperCase() + s.substring(1).toLowerCase();
   }
 }
-
 
 
 
