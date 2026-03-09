@@ -10,7 +10,7 @@ class ApiService {
   // IMPORTANT: Uncomment the one you're using
   static const String baseUrl = 'https://foodsharingbackend.onrender.com'; // Production
   // static const String baseUrl = 'http://localhost:5000'; // Local development
-  // static const String baseUrl = 'http://10.0.2.2:5000'; // Android emulator
+  // static const String baseUrl = 'http://10.0.2.2:5000'; // Android emulator sys
   
   String? _token;
   bool _isInitialized = false;
