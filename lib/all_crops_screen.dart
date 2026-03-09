@@ -104,12 +104,10 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
 
     setState(() {
       _filteredCrops = _allCrops.where((crop) {
-        // Apply search filter
         final matchesSearch = query.isEmpty || 
             (crop['name']?.toString().toLowerCase().contains(query) ?? false) ||
             (crop['variety']?.toString().toLowerCase().contains(query) ?? false);
 
-        // Apply category filter
         final matchesCategory = filterValue == 'all' || 
             crop['category'] == filterValue;
 
@@ -155,7 +153,7 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
       case 'dormant':
         return 'Dormant';
       default:
-        return status.capitalize();
+        return _capitalize(status);
     }
   }
 
@@ -175,16 +173,9 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top App Bar
             _buildTopBar(isDarkMode),
-            
-            // Search Bar
             _buildSearchBar(isDarkMode),
-            
-            // Filter Chips
             _buildFilterChips(isDarkMode),
-            
-            // Crops List
             Expanded(
               child: _isLoading
                   ? _buildLoadingState(isDarkMode)
@@ -207,8 +198,6 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
           ],
         ),
       ),
-      
-      // Floating Action Button
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.of(context).push(
@@ -218,7 +207,6 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
           );
           
           if (result != null) {
-            // Crop was added, refresh the list
             await _refreshCrops();
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -231,11 +219,7 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
           }
         },
         backgroundColor: const Color(0xFF19E6A2),
-        child: const Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 28,
-        ),
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
@@ -256,7 +240,6 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
       ),
       child: Row(
         children: [
-          // Back Button
           IconButton(
             onPressed: () => Navigator.pop(context),
             icon: Icon(
@@ -265,8 +248,6 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
               size: 20,
             ),
           ),
-          
-          // Title with refresh indicator
           Expanded(
             child: Center(
               child: Row(
@@ -295,8 +276,6 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
               ),
             ),
           ),
-          
-          // Crop count
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
@@ -337,11 +316,7 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
           children: [
             const Padding(
               padding: EdgeInsets.only(left: 16),
-              child: Icon(
-                Icons.search,
-                color: Color(0xFF4E977F),
-                size: 20,
-              ),
+              child: Icon(Icons.search, color: Color(0xFF4E977F), size: 20),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -364,11 +339,7 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
                   _searchController.clear();
                   _filterCrops();
                 },
-                icon: const Icon(
-                  Icons.clear,
-                  color: Color(0xFF4E977F),
-                  size: 18,
-                ),
+                icon: const Icon(Icons.clear, color: Color(0xFF4E977F), size: 18),
               ),
           ],
         ),
@@ -431,9 +402,7 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
-            color: const Color(0xFF19E6A2),
-          ),
+          CircularProgressIndicator(color: const Color(0xFF19E6A2)),
           const SizedBox(height: 16),
           Text(
             'Loading your crops...',
@@ -511,219 +480,202 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
     );
   }
 
-Widget _buildCropListItem(
-  BuildContext context,
-  Map<String, dynamic> crop,
-  bool isDarkMode,
-) {
-  // SAFE EXTRACTION with null checks
-  final String name = crop['name']?.toString() ?? 'Unnamed Crop';
-  final String status = crop['status']?.toString() ?? 'seedling';
-  final String variety = crop['variety']?.toString() ?? 'Unknown';
-  final String category = crop['category']?.toString() ?? 'vegetable';
-  final double progress = (crop['progress'] as num?)?.toDouble() ?? 0.0;
-  final String? imageUrl = crop['image_url']?.toString();
-  final int quantity = (crop['quantity'] as num?)?.toInt() ?? 1;
-  final String quantityUnit = crop['quantity_unit']?.toString() ?? 'plants';
-  
-  DateTime? plantingDate;
-  try {
-    plantingDate = crop['planting_date'] != null 
-        ? DateTime.parse(crop['planting_date']) 
-        : null;
-  } catch (e) {
-    plantingDate = null;
-  }
-  
-  final String dateStr = plantingDate != null
-      ? '${_getMonthAbbr(plantingDate.month)} ${plantingDate.day}'
-      : 'Not set';
-  
-  final String statusColor = _getStatusColor(status);
-  final String statusLabel = _getStatusLabel(status);
+  Widget _buildCropListItem(
+    BuildContext context,
+    Map<String, dynamic> crop,
+    bool isDarkMode,
+  ) {
+    final String name = crop['name']?.toString() ?? 'Unnamed Crop';
+    final String status = crop['status']?.toString() ?? 'seedling';
+    final String variety = crop['variety']?.toString() ?? 'Unknown';
+    final String category = crop['category']?.toString() ?? 'vegetable';
+    final double progress = (crop['progress'] as num?)?.toDouble() ?? 0.0;
+    final String? imageUrl = crop['image_url']?.toString();
+    final int quantity = (crop['quantity'] as num?)?.toInt() ?? 1;
+    final String quantityUnit = crop['quantity_unit']?.toString() ?? 'plants';
+    
+    DateTime? plantingDate;
+    try {
+      plantingDate = crop['planting_date'] != null 
+          ? DateTime.parse(crop['planting_date']) 
+          : null;
+    } catch (e) {
+      plantingDate = null;
+    }
+    
+    final String dateStr = plantingDate != null
+        ? '${_getMonthAbbr(plantingDate.month)} ${plantingDate.day}'
+        : 'Not set';
+    
+    final String statusColor = _getStatusColor(status);
+    final String statusLabel = _getStatusLabel(status);
 
-  return Container(
-    margin: const EdgeInsets.only(bottom: 12),
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: isDarkMode ? Colors.black.withOpacity(0.3) : Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(
-        color: isDarkMode ? const Color(0xFF2A3A35) : const Color(0xFFF0F2F1),
-      ),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // SIMPLE IMAGE CONTAINER
-        Container(
-          width: 72,
-          height: 72,
-          margin: const EdgeInsets.only(right: 16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: const Color(0xFF19E6A2).withOpacity(0.1),
-          ),
-          child: imageUrl != null && imageUrl.isNotEmpty
-              ? _buildNetworkImage(imageUrl)
-              : const Center(
-                  child: Icon(
-                    Icons.eco,
-                    color: Color(0xFF19E6A2),
-                    size: 32,
-                  ),
-                ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.black.withOpacity(0.3) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDarkMode ? const Color(0xFF2A3A35) : const Color(0xFFF0F2F1),
         ),
-        
-        // DETAILS
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : const Color(0xFF0E1B17),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFF19E6A2).withOpacity(0.1),
+            ),
+            child: imageUrl != null && imageUrl.isNotEmpty
+                ? Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    width: 72,
+                    height: 72,
+                    errorBuilder: (context, error, stackTrace) {
+                      print('❌ Image error: $error');
+                      return Container(
+                        color: const Color(0xFF19E6A2).withOpacity(0.1),
+                        child: const Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            color: Color(0xFF19E6A2),
+                            size: 32,
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : const Center(
+                    child: Icon(
+                      Icons.eco,
+                      color: Color(0xFF19E6A2),
+                      size: 32,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '$quantity $quantityUnit',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))),
+        ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : const Color(0xFF0E1B17),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                statusLabel,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '${_capitalize(category)} • $variety',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: const Color(0xFF4E977F),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Planted: $dateStr',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: isDarkMode ? Colors.white38 : const Color(0xFF808080),
-                ),
-              ),
-              const SizedBox(height: 8),
-              
-              // PROGRESS BAR
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 6,
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isDarkMode ? const Color(0xFF2A3A35) : const Color(0xFFF0F2F1),
-                        borderRadius: BorderRadius.circular(3),
+                        color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: progress / 100,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF19E6A2),
-                            borderRadius: BorderRadius.circular(3),
+                      child: Text(
+                        '$quantity $quantityUnit',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  statusLabel,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${_capitalize(category)} • $variety',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: const Color(0xFF4E977F),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Planted: $dateStr',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDarkMode ? Colors.white38 : const Color(0xFF808080),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? const Color(0xFF2A3A35) : const Color(0xFFF0F2F1),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: progress / 100,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF19E6A2),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${progress.toInt()}%',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? const Color(0xFFA0B8AF) : const Color(0xFF0E1B17),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${progress.toInt()}%',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isDarkMode ? const Color(0xFFA0B8AF) : const Color(0xFF0E1B17),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        
-        // CHEVRON
-        Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: Icon(
-            Icons.chevron_right,
-            color: const Color(0xFF4E977F),
-            size: 20,
+          Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Icon(
+              Icons.chevron_right,
+              color: const Color(0xFF4E977F),
+              size: 20,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
-Widget _buildNetworkImage(String imageUrl) {
-  return Image.network(
-    imageUrl,
-    fit: BoxFit.cover,
-    width: 72,
-    height: 72,
-    errorBuilder: (context, error, stackTrace) {
-      print('❌ Image error: $error');
-      return Container(
-        color: const Color(0xFF19E6A2).withOpacity(0.1),
-        child: const Center(
-          child: Icon(
-            Icons.broken_image,
-            color: Color(0xFF19E6A2),
-            size: 32,
-          ),
-        ),
-      );
-    },
-  );
-}
+  String _getMonthAbbr(int month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1];
+  }
 
-String _capitalize(String s) {
-  if (s.isEmpty) return s;
-  return s[0].toUpperCase() + s.substring(1).toLowerCase();
-}
-
-// Helper extension for string capitalization
-extension StringExtension on String {
-  String capitalize() {
-    if (isEmpty) return this;
-    return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
+  String _capitalize(String s) {
+    if (s.isEmpty) return s;
+    return s[0].toUpperCase() + s.substring(1).toLowerCase();
   }
 }
-
-
-
