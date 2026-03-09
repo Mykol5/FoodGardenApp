@@ -70,6 +70,7 @@ class _ShareScreenState extends State<ShareScreen> {
       setState(() {
         _selectedImage = image;
         _selectedImageBytes = bytes;
+        _uploadedImageUrl = null; // Reset uploaded URL when new image selected
       });
     }
   }
@@ -85,11 +86,14 @@ class _ShareScreenState extends State<ShareScreen> {
       final base64Image = base64Encode(_selectedImageBytes!);
       final fileName = _selectedImage!.name;
 
-      // Use the existing image upload method
       final result = await _apiService.uploadImageWeb(base64Image, fileName);
       
       if (result['success'] == true) {
-        return result['imageUrl'];
+        final imageUrl = result['imageUrl'];
+        setState(() {
+          _uploadedImageUrl = imageUrl;
+        });
+        return imageUrl;
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -103,6 +107,14 @@ class _ShareScreenState extends State<ShareScreen> {
       }
     } catch (e) {
       print('❌ Upload image error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error uploading image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return null;
     } finally {
       if (mounted) {
@@ -126,9 +138,17 @@ class _ShareScreenState extends State<ShareScreen> {
 
     try {
       // Upload image if selected
-      String? imageUrl = _uploadedImageUrl;
+      String? imageUrl;
       if (_selectedImage != null) {
         imageUrl = await _uploadImage();
+        if (imageUrl == null) {
+          setState(() {
+            _isLoading = false;
+          });
+          return; // Image upload failed
+        }
+      } else {
+        imageUrl = _uploadedImageUrl; // Use previously uploaded image if any
       }
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -149,6 +169,8 @@ class _ShareScreenState extends State<ShareScreen> {
         'location_text': user?['location'] ?? 'Unknown',
       };
 
+      print('📤 Sharing item: $itemData');
+      
       final result = await _apiService.createSharedItem(itemData);
 
       if (result['success'] == true && mounted) {
@@ -163,6 +185,7 @@ class _ShareScreenState extends State<ShareScreen> {
         _showError(result['error'] ?? 'Failed to share item');
       }
     } catch (e) {
+      print('❌ Share error: $e');
       _showError('Error: $e');
     } finally {
       if (mounted) {
@@ -342,6 +365,7 @@ class _ShareScreenState extends State<ShareScreen> {
                       setState(() {
                         _selectedImage = null;
                         _selectedImageBytes = null;
+                        _uploadedImageUrl = null;
                       });
                     },
                     child: Container(
@@ -387,7 +411,7 @@ class _ShareScreenState extends State<ShareScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Add up to 3 photos of your produce to attract neighbors',
+                    'Add a photo of your produce to attract neighbors',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
