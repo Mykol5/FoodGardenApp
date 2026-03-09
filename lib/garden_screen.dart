@@ -643,66 +643,39 @@ class _GardenScreenState extends State<GardenScreen> {
   }
 
 Widget _buildCropCard(BuildContext context, Map<String, dynamic> crop, bool isDarkMode) {
-  // Safely extract values with null checks
   final progress = (crop['progress'] as num?)?.toDouble() ?? 0.0;
   final status = crop['status']?.toString() ?? 'seedling';
   final name = crop['name']?.toString() ?? 'Unnamed Crop';
   final category = crop['category']?.toString() ?? 'vegetable';
   final imageUrl = crop['image_url']?.toString();
   
-  // Debug print
   print('🎨 Building card for: $name');
-  print('   - status: $status');
-  print('   - imageUrl exists: ${imageUrl != null}');
+  print('   - imageUrl: $imageUrl');
   
-  // Safely determine colors and labels
-  Color progressColor;
-  Color statusBgColor;
+  // Status styling
+  Color statusColor;
   String statusLabel;
-  IconData buttonIcon;
-  String buttonText;
-  bool buttonEnabled;
   
   switch (status) {
     case 'harvest':
-      progressColor = const Color(0xFFE59866);
-      statusBgColor = const Color(0xFFE59866);
+      statusColor = const Color(0xFFE59866);
       statusLabel = 'READY';
-      buttonIcon = Icons.cut;
-      buttonText = 'Harvest Now';
-      buttonEnabled = true;
       break;
     case 'fruiting':
-      progressColor = const Color(0xFF39AC86);
-      statusBgColor = const Color(0xFF39AC86);
+      statusColor = const Color(0xFF39AC86);
       statusLabel = 'FRUITING';
-      buttonIcon = Icons.water_drop;
-      buttonText = 'Water';
-      buttonEnabled = false;
       break;
     case 'flowering':
-      progressColor = const Color(0xFFE59866);
-      statusBgColor = const Color(0xFFE59866);
+      statusColor = const Color(0xFFE59866);
       statusLabel = 'FLOWERING';
-      buttonIcon = Icons.timer;
-      buttonText = 'Developing';
-      buttonEnabled = false;
       break;
     case 'vegetative':
-      progressColor = const Color(0xFF4299E1);
-      statusBgColor = const Color(0xFF4299E1);
+      statusColor = const Color(0xFF4299E1);
       statusLabel = 'GROWING';
-      buttonIcon = Icons.water_drop;
-      buttonText = 'Water';
-      buttonEnabled = false;
       break;
     default:
-      progressColor = Colors.grey;
-      statusBgColor = Colors.grey;
+      statusColor = Colors.grey;
       statusLabel = status.toUpperCase();
-      buttonIcon = Icons.timer;
-      buttonText = 'Seedling';
-      buttonEnabled = false;
   }
   
   return Container(
@@ -711,117 +684,69 @@ Widget _buildCropCard(BuildContext context, Map<String, dynamic> crop, bool isDa
       color: isDarkMode ? const Color(0xFF2D3A35) : Colors.white,
       borderRadius: BorderRadius.circular(20),
       border: Border.all(
-        color: isDarkMode 
-            ? const Color(0xFF3A4A44) 
-            : const Color(0xFFF0F2F1),
+        color: isDarkMode ? const Color(0xFF3A4A44) : const Color(0xFFF0F2F1),
       ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 8,
-          offset: const Offset(0, 4),
-        ),
-      ],
     ),
     child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Image Section - FIXED with null safety
-        SizedBox(
+        // Image Container (simplified like ProfileScreen)
+        Container(
           height: 128,
           width: double.infinity,
-          child: Stack(
-            children: [
-              // Crop Image
-              if (imageUrl != null && imageUrl.isNotEmpty)
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                  child: Image.network(
-                    imageUrl,
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+            color: const Color(0xFF39AC86).withOpacity(0.1),
+            image: (imageUrl != null && imageUrl.isNotEmpty)
+                ? DecorationImage(
+                    image: NetworkImage(imageUrl),
                     fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: 128,
-                    errorBuilder: (context, error, stackTrace) {
-                      print('❌ Failed to load image: $imageUrl');
-                      print('❌ Error: $error');
-                      return Container(
-                        width: double.infinity,
-                        height: 128,
-                        color: const Color(0xFF39AC86).withOpacity(0.1),
-                        child: Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            size: 48,
-                            color: const Color(0xFF39AC86).withOpacity(0.3),
-                          ),
-                        ),
-                      );
+                    onError: (exception, stackTrace) {
+                      print('❌ Error loading image: $exception');
                     },
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        width: double.infinity,
-                        height: 128,
-                        color: const Color(0xFF39AC86).withOpacity(0.1),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                : null,
-                            color: const Color(0xFF39AC86),
-                          ),
-                        ),
-                      );
-                    },
+                  )
+                : null,
+          ),
+          child: (imageUrl == null || imageUrl.isEmpty)
+              ? Center(
+                  child: Icon(
+                    Icons.eco,
+                    size: 48,
+                    color: const Color(0xFF39AC86).withOpacity(0.3),
                   ),
                 )
-              else
-                Container(
-                  width: double.infinity,
-                  height: 128,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF39AC86).withOpacity(0.1),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.eco,
-                      size: 48,
-                      color: const Color(0xFF39AC86).withOpacity(0.3),
-                    ),
-                  ),
+              : null,
+        ),
+        
+        // Status Badge (positioned absolutely)
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              
-              // Status Badge
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: statusBgColor.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
-                    ),
+                child: Text(
+                  statusLabel,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
               ),
             ],
           ),
         ),
-        // Content Section
+        
+        // Content
         Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -843,9 +768,11 @@ Widget _buildCropCard(BuildContext context, Map<String, dynamic> crop, bool isDa
                 ),
               ),
               const SizedBox(height: 16),
+              
               // Progress Bar
               Container(
                 height: 4,
+                width: double.infinity,
                 decoration: BoxDecoration(
                   color: isDarkMode ? const Color(0xFF3A4A44) : const Color(0xFFF0F2F1),
                   borderRadius: BorderRadius.circular(2),
@@ -855,50 +782,10 @@ Widget _buildCropCard(BuildContext context, Map<String, dynamic> crop, bool isDa
                   widthFactor: progress / 100,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: progressColor,
+                      color: statusColor,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Action Button
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: buttonEnabled
-                      ? const Color(0xFF39AC86)
-                      : (isDarkMode ? const Color(0xFF3A4A44) : const Color(0xFFF0F2F1)),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: buttonEnabled
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFF39AC86).withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      buttonIcon,
-                      size: 16,
-                      color: buttonEnabled ? Colors.white : const Color(0xFF999999),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      buttonText,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: buttonEnabled ? Colors.white : const Color(0xFF999999),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ],
@@ -908,7 +795,7 @@ Widget _buildCropCard(BuildContext context, Map<String, dynamic> crop, bool isDa
     ),
   );
 }
-
+  
   Widget _buildProductivityHeader(bool isDarkMode) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 32, 16, 8),
