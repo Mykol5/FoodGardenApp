@@ -5,11 +5,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../providers/auth_provider.dart';
+import 'main_layout.dart'; // Add this import for navigation
 
 class ShareScreen extends StatefulWidget {
-  final Map<String, dynamic>? existingCrop; // Optional: pre-fill from a crop
+  final VoidCallback? onShareSuccess;
   
-  const ShareScreen({super.key, this.existingCrop});
+  const ShareScreen({super.key, this.onShareSuccess});
 
   @override
   State<ShareScreen> createState() => _ShareScreenState();
@@ -39,13 +40,8 @@ class _ShareScreenState extends State<ShareScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill if coming from a crop
-    if (widget.existingCrop != null) {
-      _itemNameController.text = widget.existingCrop!['name'] ?? '';
-      _selectedCategory = _capitalize(widget.existingCrop!['category'] ?? 'vegetable');
-      _quantity = widget.existingCrop!['quantity'] ?? 3;
-      _selectedUnit = widget.existingCrop!['quantity_unit'] ?? 'lbs';
-    }
+    // Reset form when screen is shown
+    _clearForm();
   }
 
   @override
@@ -54,6 +50,22 @@ class _ShareScreenState extends State<ShareScreen> {
     _pickupInstructionsController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  void _clearForm() {
+    _itemNameController.clear();
+    _descriptionController.clear();
+    _pickupInstructionsController.clear();
+    setState(() {
+      _quantity = 3;
+      _selectedCategory = 'Vegetables';
+      _selectedUnit = 'lbs';
+      _selectedImage = null;
+      _selectedImageBytes = null;
+      _uploadedImageUrl = null;
+      _isLoading = false;
+      _isUploadingImage = false;
+    });
   }
 
   Future<void> _pickImage() async {
@@ -70,7 +82,7 @@ class _ShareScreenState extends State<ShareScreen> {
       setState(() {
         _selectedImage = image;
         _selectedImageBytes = bytes;
-        _uploadedImageUrl = null; // Reset uploaded URL when new image selected
+        _uploadedImageUrl = null;
       });
     }
   }
@@ -125,6 +137,17 @@ class _ShareScreenState extends State<ShareScreen> {
     }
   }
 
+  String _mapCategory(String category) {
+    switch(category.toLowerCase()) {
+      case 'vegetables': return 'vegetable';
+      case 'fruits': return 'fruit';
+      case 'herbs': return 'herb';
+      case 'flowers': return 'flower';
+      case 'seeds': return 'other';
+      default: return category.toLowerCase();
+    }
+  }
+
   Future<void> _shareItem() async {
     // Validate
     if (_itemNameController.text.trim().isEmpty) {
@@ -145,10 +168,8 @@ class _ShareScreenState extends State<ShareScreen> {
           setState(() {
             _isLoading = false;
           });
-          return; // Image upload failed
+          return;
         }
-      } else {
-        imageUrl = _uploadedImageUrl; // Use previously uploaded image if any
       }
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -156,7 +177,7 @@ class _ShareScreenState extends State<ShareScreen> {
 
       final itemData = {
         'name': _itemNameController.text.trim(),
-        'category': _selectedCategory.toLowerCase(),
+        'category': _mapCategory(_selectedCategory),
         'quantity': _quantity,
         'quantity_unit': _selectedUnit,
         'description': _descriptionController.text.trim().isEmpty 
@@ -174,25 +195,23 @@ class _ShareScreenState extends State<ShareScreen> {
       final result = await _apiService.createSharedItem(itemData);
 
       if (result['success'] == true && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Item shared successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context, true);
+        // Call the success callback to navigate home
+        widget.onShareSuccess?.call();
+        
+        // Clear the form for next time
+        _clearForm();
       } else {
         _showError(result['error'] ?? 'Failed to share item');
-      }
-    } catch (e) {
-      print('❌ Share error: $e');
-      _showError('Error: $e');
-    } finally {
-      if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
+    } catch (e) {
+      print('❌ Share error: $e');
+      _showError('Error: $e');
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -277,9 +296,11 @@ class _ShareScreenState extends State<ShareScreen> {
       ),
       child: Row(
         children: [
-          // Close Button
+          // Close Button - Now navigates to Home
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              widget.onShareSuccess?.call(); // This will navigate to home
+            },
             child: Container(
               width: 40,
               height: 40,
