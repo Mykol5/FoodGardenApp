@@ -856,6 +856,202 @@ Future<Map<String, dynamic>> uploadCropImage(String imagePath) async {
     return true;
   }
 
+
+
+
+// ============ SHARED ITEMS METHODS ============
+
+// Get all available shared items
+Future<Map<String, dynamic>> getSharedItems() async {
+  try {
+    print('🔄 Getting shared items');
+    print('🌐 URL: $baseUrl/api/shared-items');
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/shared-items'),
+      headers: headers,
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return {
+        'success': true,
+        'items': data['items'] ?? [],
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to fetch shared items',
+        'statusCode': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('❌ Get shared items error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+// Get user's shared items
+Future<Map<String, dynamic>> getMySharedItems() async {
+  try {
+    print('🔄 Getting my shared items');
+    print('🌐 URL: $baseUrl/api/shared-items/my-items');
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/shared-items/my-items'),
+      headers: headers,
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return {
+        'success': true,
+        'items': data['items'] ?? [],
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to fetch your shared items',
+        'statusCode': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('❌ Get my shared items error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+// Create new shared item
+Future<Map<String, dynamic>> createSharedItem(Map<String, dynamic> itemData) async {
+  try {
+    print('🔄 Creating shared item');
+    print('📤 Data: $itemData');
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/shared-items'),
+      headers: headers,
+      body: jsonEncode(itemData),
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response body: ${response.body}');
+
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 201 && data['success'] == true) {
+      return {
+        'success': true,
+        'message': data['message'] ?? 'Item shared successfully',
+        'item': data['item'],
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to share item',
+        'statusCode': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('❌ Create shared item error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+// Update shared item status
+Future<Map<String, dynamic>> updateSharedItemStatus(String itemId, String status) async {
+  try {
+    print('🔄 Updating shared item $itemId status to $status');
+    
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/shared-items/$itemId/status'),
+      headers: headers,
+      body: jsonEncode({'status': status}),
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response body: ${response.body}');
+
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return {
+        'success': true,
+        'message': data['message'] ?? 'Status updated successfully',
+        'item': data['item'],
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to update status',
+        'statusCode': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('❌ Update shared item error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+// Delete shared item
+Future<Map<String, dynamic>> deleteSharedItem(String itemId) async {
+  try {
+    print('🔄 Deleting shared item $itemId');
+    
+    final response = await http.delete(
+      Uri.parse('$baseUrl/api/shared-items/$itemId'),
+      headers: headers,
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response body: ${response.body}');
+
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return {
+        'success': true,
+        'message': data['message'] ?? 'Item deleted successfully',
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to delete item',
+        'statusCode': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('❌ Delete shared item error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+
+
+
+
+  
+
   // ============ HTTP METHODS ============
 
   // Generic HTTP GET method
