@@ -535,10 +535,6 @@ Widget _buildCropListItem(
   final statusColor = _getStatusColor(status);
   final statusLabel = _getStatusLabel(status);
 
-  print('🖼️ AllCrops - Building item for: $name');
-  print('   - imageUrl: $imageUrl');
-  print('   - has image: ${imageUrl != null && imageUrl.isNotEmpty}');
-
   return GestureDetector(
     onTap: () async {
       final result = await Navigator.of(context).push(
@@ -564,61 +560,18 @@ Widget _buildCropListItem(
         border: Border.all(
           color: isDarkMode ? const Color(0xFF2A3A35) : const Color(0xFFF0F2F1),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Row(
         children: [
-          // Crop Image - FIXED VERSION
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              width: 72,
-              height: 72,
+          // SIMPLIFIED IMAGE WIDGET
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
               color: const Color(0xFF19E6A2).withOpacity(0.1),
-              child: imageUrl != null && imageUrl.isNotEmpty
-                  ? Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      width: 72,
-                      height: 72,
-                      errorBuilder: (context, error, stackTrace) {
-                        print('❌ AllCrops - Failed to load image: $imageUrl');
-                        print('❌ Error: $error');
-                        return Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            color: const Color(0xFF19E6A2).withOpacity(0.5),
-                            size: 32,
-                          ),
-                        );
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                : null,
-                            color: const Color(0xFF19E6A2),
-                            strokeWidth: 2,
-                          ),
-                        );
-                      },
-                    )
-                  : Center(
-                      child: Icon(
-                        Icons.eco,
-                        color: const Color(0xFF19E6A2).withOpacity(0.5),
-                        size: 32,
-                      ),
-                    ),
             ),
+            child: _buildSafeImage(imageUrl),
           ),
           const SizedBox(width: 16),
           
@@ -736,6 +689,62 @@ Widget _buildCropListItem(
   );
 }
 
+// SEPARATE SAFE IMAGE BUILDER
+Widget _buildSafeImage(String? imageUrl) {
+  try {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        width: 72,
+        height: 72,
+        errorBuilder: (context, error, stackTrace) {
+          print('❌ Image error: $error');
+          return Center(
+            child: Icon(
+              Icons.broken_image,
+              color: const Color(0xFF19E6A2).withOpacity(0.5),
+              size: 32,
+            ),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                    : null,
+                color: const Color(0xFF19E6A2),
+                strokeWidth: 2,
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      return Center(
+        child: Icon(
+          Icons.eco,
+          color: const Color(0xFF19E6A2).withOpacity(0.5),
+          size: 32,
+        ),
+      );
+    }
+  } catch (e) {
+    print('❌ Critical error in image builder: $e');
+    return Center(
+      child: Icon(
+        Icons.error,
+        color: Colors.red,
+        size: 32,
+      ),
+    );
+  }
+}
   String _getMonthAbbr(int month) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months[month - 1];
