@@ -858,6 +858,44 @@ Future<Map<String, dynamic>> uploadCropImage(String imagePath) async {
 
 
 
+  // Get all available shared items
+Future<Map<String, dynamic>> getSharedItems() async {
+  try {
+    print('🔄 Getting shared items');
+    print('🌐 URL: $baseUrl/api/shared-items');
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/shared-items'),
+      headers: headers,
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return {
+        'success': true,
+        'items': data['items'] ?? [],
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to fetch shared items',
+      };
+    }
+  } catch (e) {
+    print('❌ Get shared items error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+
+
+  
 
 // ============ SHARED ITEMS METHODS ============
 
