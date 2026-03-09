@@ -4,14 +4,21 @@ import 'product_details_screen.dart';
 import 'messages_screen.dart';
 import 'add_new_crop.dart';
 import 'profile_screen.dart';
-import 'main_layout.dart'; // ADD THIS IMPORT
+import 'main_layout.dart';
 import 'providers/auth_provider.dart';
 import 'services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onItemShared;
+  final VoidCallback? onNavigateToShare; // Add this callback
+  final VoidCallback? onNavigateToGarden; // Add this callback
   
-  const HomeScreen({super.key, this.onItemShared});
+  const HomeScreen({
+    super.key, 
+    this.onItemShared,
+    this.onNavigateToShare, // Initialize
+    this.onNavigateToGarden, // Initialize
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -184,10 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          final mainLayoutState = context.findAncestorStateOfType<_MainLayoutState>();
-          mainLayoutState?.navigateToShare();
-        },
+        onPressed: widget.onNavigateToShare, // Use callback instead of direct access
         backgroundColor: const Color(0xFF39AC86),
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -281,8 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: 'My Garden',
                     onTap: () {
                       Navigator.pop(context);
-                      final mainLayoutState = context.findAncestorStateOfType<_MainLayoutState>();
-                      mainLayoutState?.navigateToGarden();
+                      widget.onNavigateToGarden?.call(); // Use callback
                     },
                   ),
                   _buildDrawerItem(
@@ -812,10 +815,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
-                final mainLayoutState = context.findAncestorStateOfType<_MainLayoutState>();
-                mainLayoutState?.navigateToShare();
-              },
+              onPressed: widget.onNavigateToShare, // Use callback
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF39AC86),
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
