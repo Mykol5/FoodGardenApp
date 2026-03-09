@@ -4,6 +4,7 @@ import 'product_details_screen.dart';
 import 'messages_screen.dart';
 import 'add_new_crop.dart';
 import 'profile_screen.dart';
+import 'main_layout.dart'; // ADD THIS IMPORT
 import 'providers/auth_provider.dart';
 import 'services/api_service.dart';
 
@@ -76,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final category = categories[_selectedCategoryIndex].toLowerCase();
     return _sharedItems.where((item) {
       final itemCategory = item['category']?.toString().toLowerCase() ?? '';
-      return itemCategory == category.substring(0, category.length - 1); // Remove 's' from plural
+      return itemCategory == category.substring(0, category.length - 1);
     }).toList();
   }
 
@@ -184,7 +185,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Navigate to Share tab
           final mainLayoutState = context.findAncestorStateOfType<_MainLayoutState>();
           mainLayoutState?.navigateToShare();
         },
@@ -281,7 +281,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: 'My Garden',
                     onTap: () {
                       Navigator.pop(context);
-                      // Navigate to Garden tab
                       final mainLayoutState = context.findAncestorStateOfType<_MainLayoutState>();
                       mainLayoutState?.navigateToGarden();
                     },
