@@ -516,150 +516,147 @@ Widget _buildCropListItem(
   Map<String, dynamic> crop,
   bool isDarkMode,
 ) {
-  final name = crop['name'] ?? 'Unnamed Crop';
-  final status = crop['status'] ?? 'seedling';
-  final variety = crop['variety'] ?? 'Unknown';
-  final category = crop['category'] ?? 'vegetable';
-  final progress = (crop['progress'] as num?)?.toDouble() ?? 0.0;
-  final imageUrl = crop['image_url'];
-  final quantity = crop['quantity'] ?? 1;
-  final quantityUnit = crop['quantity_unit'] ?? 'plants';
-  final plantingDate = crop['planting_date'] != null
-      ? DateTime.parse(crop['planting_date'])
-      : null;
+  // SAFE EXTRACTION with null checks
+  final String name = crop['name']?.toString() ?? 'Unnamed Crop';
+  final String status = crop['status']?.toString() ?? 'seedling';
+  final String variety = crop['variety']?.toString() ?? 'Unknown';
+  final String category = crop['category']?.toString() ?? 'vegetable';
+  final double progress = (crop['progress'] as num?)?.toDouble() ?? 0.0;
+  final String? imageUrl = crop['image_url']?.toString();
+  final int quantity = (crop['quantity'] as num?)?.toInt() ?? 1;
+  final String quantityUnit = crop['quantity_unit']?.toString() ?? 'plants';
   
-  final dateStr = plantingDate != null
+  DateTime? plantingDate;
+  try {
+    plantingDate = crop['planting_date'] != null 
+        ? DateTime.parse(crop['planting_date']) 
+        : null;
+  } catch (e) {
+    plantingDate = null;
+  }
+  
+  final String dateStr = plantingDate != null
       ? '${_getMonthAbbr(plantingDate.month)} ${plantingDate.day}'
       : 'Not set';
   
-  final statusColor = _getStatusColor(status);
-  final statusLabel = _getStatusLabel(status);
+  final String statusColor = _getStatusColor(status);
+  final String statusLabel = _getStatusLabel(status);
 
-  return GestureDetector(
-    onTap: () async {
-      final result = await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => UpdateCropStatusScreen(
-            cropName: name,
-            cropImage: imageUrl ?? '',
-            currentStatus: status,
-          ),
-        ),
-      );
-      
-      if (result == true) {
-        await _refreshCrops();
-      }
-    },
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDarkMode ? Colors.black.withOpacity(0.3) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDarkMode ? const Color(0xFF2A3A35) : const Color(0xFFF0F2F1),
-        ),
+  return Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: isDarkMode ? Colors.black.withOpacity(0.3) : Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: isDarkMode ? const Color(0xFF2A3A35) : const Color(0xFFF0F2F1),
       ),
-      child: Row(
-        children: [
-          // SIMPLIFIED IMAGE WIDGET
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: const Color(0xFF19E6A2).withOpacity(0.1),
-            ),
-            child: _buildSafeImage(imageUrl),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // SIMPLE IMAGE CONTAINER
+        Container(
+          width: 72,
+          height: 72,
+          margin: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: const Color(0xFF19E6A2).withOpacity(0.1),
           ),
-          const SizedBox(width: 16),
-          
-          // Crop Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : const Color(0xFF0E1B17),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '$quantity $quantityUnit',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  statusLabel,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))),
+          child: imageUrl != null && imageUrl.isNotEmpty
+              ? _buildNetworkImage(imageUrl)
+              : const Center(
+                  child: Icon(
+                    Icons.eco,
+                    color: Color(0xFF19E6A2),
+                    size: 32,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${category.capitalize()} • $variety',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: const Color(0xFF4E977F),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Planted: $dateStr',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isDarkMode ? Colors.white38 : const Color(0xFF808080),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Progress and Chevron
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+        ),
+        
+        // DETAILS
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 60,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? const Color(0xFF2A3A35) : const Color(0xFFF0F2F1),
-                      borderRadius: BorderRadius.circular(3),
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDarkMode ? Colors.white : const Color(0xFF0E1B17),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: progress / 100,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF19E6A2),
-                          borderRadius: BorderRadius.circular(3),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '$quantity $quantityUnit',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                statusLabel,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${_capitalize(category)} • $variety',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: const Color(0xFF4E977F),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Planted: $dateStr',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isDarkMode ? Colors.white38 : const Color(0xFF808080),
+                ),
+              ),
+              const SizedBox(height: 8),
+              
+              // PROGRESS BAR
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? const Color(0xFF2A3A35) : const Color(0xFFF0F2F1),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: progress / 100,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF19E6A2),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
                         ),
                       ),
                     ),
@@ -675,80 +672,49 @@ Widget _buildCropListItem(
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              const Icon(
-                Icons.chevron_right,
-                color: Color(0xFF4E977F),
-                size: 20,
-              ),
             ],
           ),
-        ],
-      ),
+        ),
+        
+        // CHEVRON
+        Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: Icon(
+            Icons.chevron_right,
+            color: const Color(0xFF4E977F),
+            size: 20,
+          ),
+        ),
+      ],
     ),
   );
 }
 
-// SEPARATE SAFE IMAGE BUILDER
-Widget _buildSafeImage(String? imageUrl) {
-  try {
-    if (imageUrl != null && imageUrl.isNotEmpty) {
-      return Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-        width: 72,
-        height: 72,
-        errorBuilder: (context, error, stackTrace) {
-          print('❌ Image error: $error');
-          return Center(
-            child: Icon(
-              Icons.broken_image,
-              color: const Color(0xFF19E6A2).withOpacity(0.5),
-              size: 32,
-            ),
-          );
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Center(
-            child: SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                    : null,
-                color: const Color(0xFF19E6A2),
-                strokeWidth: 2,
-              ),
-            ),
-          );
-        },
-      );
-    } else {
-      return Center(
-        child: Icon(
-          Icons.eco,
-          color: const Color(0xFF19E6A2).withOpacity(0.5),
-          size: 32,
+Widget _buildNetworkImage(String imageUrl) {
+  return Image.network(
+    imageUrl,
+    fit: BoxFit.cover,
+    width: 72,
+    height: 72,
+    errorBuilder: (context, error, stackTrace) {
+      print('❌ Image error: $error');
+      return Container(
+        color: const Color(0xFF19E6A2).withOpacity(0.1),
+        child: const Center(
+          child: Icon(
+            Icons.broken_image,
+            color: Color(0xFF19E6A2),
+            size: 32,
+          ),
         ),
       );
-    }
-  } catch (e) {
-    print('❌ Critical error in image builder: $e');
-    return Center(
-      child: Icon(
-        Icons.error,
-        color: Colors.red,
-        size: 32,
-      ),
-    );
-  }
+    },
+  );
 }
-  String _getMonthAbbr(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months[month - 1];
-  }
+
+String _capitalize(String s) {
+  if (s.isEmpty) return s;
+  return s[0].toUpperCase() + s.substring(1).toLowerCase();
 }
 
 // Helper extension for string capitalization
