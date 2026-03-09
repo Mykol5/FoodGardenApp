@@ -17,13 +17,70 @@ class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
   
   // Define your screens here
-  final List<Widget> _screens = [
-    const HomeScreen(),      // Index 0
-    const GardenScreen(),    // Index 1
-    const ShareScreen(),     // Index 2
-    const GuidesScreen(),    // Index 3
-    const ProfileScreen(),   // Index 4
-  ];
+  late final List<Widget> _screens;
+  
+  @override
+  void initState() {
+    super.initState();
+    _initializeScreens();
+  }
+  
+  void _initializeScreens() {
+    _screens = [
+      HomeScreen(key: UniqueKey(), onItemShared: _refreshHome),      // Index 0
+      const GardenScreen(),                                           // Index 1
+      ShareScreen(key: UniqueKey(), onShareSuccess: _navigateToHome), // Index 2
+      const GuidesScreen(),                                           // Index 3
+      const ProfileScreen(),                                          // Index 4
+    ];
+  }
+
+  void _refreshHome() {
+    setState(() {
+      _screens[0] = HomeScreen(key: UniqueKey(), onItemShared: _refreshHome);
+    });
+  }
+
+  void _navigateToHome() {
+    if (mounted) {
+      setState(() {
+        _selectedIndex = 0;
+        _refreshHome();
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Item shared successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  // Navigation methods for drawer
+  void navigateToGarden() {
+    setState(() {
+      _selectedIndex = 1;
+    });
+  }
+
+  void navigateToShare() {
+    setState(() {
+      _selectedIndex = 2;
+    });
+  }
+
+  void navigateToGuides() {
+    setState(() {
+      _selectedIndex = 3;
+    });
+  }
+
+  void navigateToProfile() {
+    setState(() {
+      _selectedIndex = 4;
+    });
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -43,12 +100,10 @@ class _MainLayoutState extends State<MainLayout> {
       floatingActionButton: (_selectedIndex == 0 || _selectedIndex == 2)
           ? FloatingActionButton(
               onPressed: () {
-                // Handle FAB tap based on current screen
                 if (_selectedIndex == 0) {
-                  // Home screen - add new produce
-                } else if (_selectedIndex == 2) {
-                  // Share screen - share something
+                  navigateToShare();
                 }
+                // On Share screen, FAB does nothing (form is already there)
               },
               backgroundColor: const Color(0xFF39AC86),
               child: const Icon(Icons.add, color: Colors.white),
