@@ -25,15 +25,23 @@ class _MainLayoutState extends State<MainLayout> {
     _initializeScreens();
   }
   
-  void _initializeScreens() {
-    _screens = [
-      HomeScreen(key: UniqueKey(), onItemShared: _refreshHome),      // Index 0
-      const GardenScreen(),                                           // Index 1
-      ShareScreen(key: UniqueKey(), onShareSuccess: _navigateToHome), // Index 2
-      const GuidesScreen(),                                           // Index 3
-      const ProfileScreen(),                                          // Index 4
-    ];
-  }
+void _initializeScreens() {
+  _screens = [
+    HomeScreen(
+      key: UniqueKey(), 
+      onItemShared: _refreshHome,
+      onNavigateToShare: navigateToShare, // Add this
+      onNavigateToGarden: navigateToGarden, // Add this
+    ),
+    const GardenScreen(),
+    ShareScreen(
+      key: UniqueKey(), 
+      onShareSuccess: _navigateToHome,
+    ),
+    const GuidesScreen(),
+    const ProfileScreen(),
+  ];
+}
 
   void _refreshHome() {
     setState(() {
