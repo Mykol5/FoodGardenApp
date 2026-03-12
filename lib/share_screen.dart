@@ -3,9 +3,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import '../services/api_service.dart';
 import '../providers/auth_provider.dart';
-import 'main_layout.dart'; // Add this import for navigation
+import 'main_layout.dart';
 
 class ShareScreen extends StatefulWidget {
   final VoidCallback? onShareSuccess;
@@ -20,6 +23,7 @@ class _ShareScreenState extends State<ShareScreen> {
   final _itemNameController = TextEditingController();
   final _pickupInstructionsController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _locationSearchController = TextEditingController();
   
   int _quantity = 3;
   String _selectedCategory = 'Vegetables';
@@ -32,6 +36,17 @@ class _ShareScreenState extends State<ShareScreen> {
   bool _isUploadingImage = false;
   String? _uploadedImageUrl;
   
+  // Location related
+  GoogleMapController? _mapController;
+  LatLng? _selectedLocation;
+  String? _selectedAddress;
+  bool _isLoadingLocation = false;
+  bool _locationSelected = false;
+  
+  // Initial camera position (default to a central location)
+  static const LatLng _defaultLocation = LatLng(37.7749, -122.4194); // San Francisco
+  // You can change this to your city's coordinates
+  
   final List<String> categories = ['Vegetables', 'Fruits', 'Herbs', 'Seeds', 'Other'];
   final List<String> units = ['lbs', 'kg', 'oz', 'pieces', 'bunches'];
   
@@ -40,8 +55,8 @@ class _ShareScreenState extends State<ShareScreen> {
   @override
   void initState() {
     super.initState();
-    // Reset form when screen is shown
     _clearForm();
+    _getCurrentLocation();
   }
 
   @override
@@ -49,7 +64,170 @@ class _ShareScreenState extends State<ShareScreen> {
     _itemNameController.dispose();
     _pickupInstructionsController.dispose();
     _descriptionController.dispose();
+    _locationSearchController.dispose();
+    _mapController?.dispose();
     super.dispose();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    setState(() {
+      _isLoadingLocation = true;
+    });
+
+    try {
+      // Check permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print('Location permissions are denied');
+          setState(() {
+            _isLoadingLocation = false;
+          });
+          return;
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        print('Location permissions are permanently denied');
+        setState(() {
+          _isLoadingLocation = false;
+        });
+        return;
+      }
+
+      // Get current position
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      setState(() {
+        _selectedLocation = LatLng(position.latitude, position.longitude);
+      });
+
+      // Get address from coordinates
+      await _getAddressFromLatLng(position.latitude, position.longitude);
+      
+      // Move camera to current location
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(position.latitude, position.longitude),
+          15,
+        ),
+      );
+
+    } catch (e) {
+      print('Error getting location: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not get your location: $e'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoadingLocation = false;
+      });
+    }
+  }
+
+  Future<void> _getAddressFromLatLng(double latitude, double longitude) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        latitude, 
+        longitude,
+      );
+      
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        String address = [
+          place.street,
+          place.subLocality,
+          place.locality,
+          place.administrativeArea,
+          place.postalCode,
+          place.country,
+        ].where((element) => element != null && element.isNotEmpty).join(', ');
+        
+        setState(() {
+          _selectedAddress = address;
+          _locationSearchController.text = address;
+        });
+      }
+    } catch (e) {
+      print('Error getting address: $e');
+    }
+  }
+
+  Future<void> _searchLocation(String query) async {
+    if (query.isEmpty) return;
+
+    setState(() {
+      _isLoadingLocation = true;
+    });
+
+    try {
+      List<Location> locations = await locationFromAddress(query);
+      
+      if (locations.isNotEmpty) {
+        Location location = locations.first;
+        setState(() {
+          _selectedLocation = LatLng(location.latitude, location.longitude);
+        });
+        
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(location.latitude, location.longitude),
+            15,
+          ),
+        );
+        
+        _locationSearchController.text = query;
+        _selectedAddress = query;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location not found'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error searching location: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error searching location: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoadingLocation = false;
+      });
+    }
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+    if (_selectedLocation != null) {
+      controller.animateCamera(
+        CameraUpdate.newLatLngZoom(_selectedLocation!, 15),
+      );
+    }
+  }
+
+  void _onMapTap(LatLng location) {
+    setState(() {
+      _selectedLocation = location;
+      _locationSelected = true;
+    });
+    
+    _getAddressFromLatLng(location.latitude, location.longitude);
+    
+    // Add a marker by updating the map
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLng(location),
+    );
   }
 
   void _clearForm() {
@@ -65,6 +243,7 @@ class _ShareScreenState extends State<ShareScreen> {
       _uploadedImageUrl = null;
       _isLoading = false;
       _isUploadingImage = false;
+      _locationSelected = false;
     });
   }
 
@@ -155,6 +334,11 @@ class _ShareScreenState extends State<ShareScreen> {
       return;
     }
 
+    if (!_locationSelected || _selectedLocation == null) {
+      _showError('Please select a pickup location on the map');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -187,10 +371,12 @@ class _ShareScreenState extends State<ShareScreen> {
             ? null
             : _pickupInstructionsController.text.trim(),
         'image_url': imageUrl,
-        'location_text': user?['location'] ?? 'Unknown',
+        'location_text': _selectedAddress ?? user?['location'] ?? 'Unknown',
+        'latitude': _selectedLocation?.latitude,
+        'longitude': _selectedLocation?.longitude,
       };
 
-      print('📤 Sharing item: $itemData');
+      print('📤 Sharing item with location: $itemData');
       
       final result = await _apiService.createSharedItem(itemData);
 
@@ -267,6 +453,11 @@ class _ShareScreenState extends State<ShareScreen> {
 
                         const SizedBox(height: 16),
 
+                        // Location Card with Map
+                        _buildLocationCard(isDarkMode),
+
+                        const SizedBox(height: 16),
+
                         // Sustainability Tip
                         _buildSustainabilityTip(isDarkMode),
 
@@ -296,10 +487,10 @@ class _ShareScreenState extends State<ShareScreen> {
       ),
       child: Row(
         children: [
-          // Close Button - Now navigates to Home
+          // Close Button
           GestureDetector(
             onTap: () {
-              widget.onShareSuccess?.call(); // This will navigate to home
+              widget.onShareSuccess?.call();
             },
             child: Container(
               width: 40,
@@ -355,6 +546,245 @@ class _ShareScreenState extends State<ShareScreen> {
     );
   }
 
+  Widget _buildLocationCard(bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF2D3A35) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.location_on,
+                color: Color(0xFF39AC86),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Pickup Location',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              if (_isLoadingLocation)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFF39AC86),
+                  ),
+                ),
+              if (!_isLoadingLocation)
+                GestureDetector(
+                  onTap: _getCurrentLocation,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF39AC86).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.my_location,
+                          color: Color(0xFF39AC86),
+                          size: 16,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'Use My Location',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF39AC86),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+
+          // Location Search Field
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF212C28) : const Color(0xFFF9F8F6),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFF39AC86).withOpacity(0.1),
+              ),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 16),
+                const Icon(
+                  Icons.search,
+                  color: Color(0xFF5C8A7A),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _locationSearchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search for an address',
+                      hintStyle: TextStyle(
+                        color: const Color(0xFF5C8A7A).withOpacity(0.6),
+                      ),
+                      border: InputBorder.none,
+                    ),
+                    onSubmitted: _searchLocation,
+                  ),
+                ),
+                if (_locationSearchController.text.isNotEmpty)
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _locationSearchController.clear();
+                      });
+                    },
+                    icon: const Icon(
+                      Icons.clear,
+                      color: Color(0xFF5C8A7A),
+                      size: 18,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Map Container
+          Container(
+            height: 200,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFF39AC86).withOpacity(0.2),
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Stack(
+                children: [
+                  GoogleMap(
+                    onMapCreated: _onMapCreated,
+                    initialCameraPosition: CameraPosition(
+                      target: _selectedLocation ?? _defaultLocation,
+                      zoom: 12,
+                    ),
+                    onTap: _onMapTap,
+                    markers: _selectedLocation != null
+                        ? {
+                            Marker(
+                              markerId: const MarkerId('selected-location'),
+                              position: _selectedLocation!,
+                              draggable: true,
+                              onDragEnd: (newPosition) {
+                                _onMapTap(newPosition);
+                              },
+                            ),
+                          }
+                        : {},
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
+                    mapToolbarEnabled: false,
+                    compassEnabled: false,
+                  ),
+                  if (_isLoadingLocation)
+                    Container(
+                      color: Colors.black.withOpacity(0.3),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF39AC86),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Selected Address Display
+          if (_selectedAddress != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF39AC86).withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF39AC86).withOpacity(0.2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    color: Color(0xFF39AC86),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _selectedAddress!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          if (_selectedLocation == null)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Center(
+                child: Text(
+                  'Tap on the map to select your pickup location',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDarkMode ? Colors.white38 : const Color(0xFF808080),
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Rest of your existing widget methods (_buildImageUploader, _buildProduceDetailsCard, 
+  // _buildLogisticsCard, _buildSustainabilityTip, _buildBottomCTA, _buildTextField)
+  // remain exactly the same as in your original code
   Widget _buildImageUploader(bool isDarkMode) {
     return GestureDetector(
       onTap: _isUploadingImage ? null : _pickImage,
