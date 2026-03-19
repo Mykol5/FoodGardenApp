@@ -841,6 +841,51 @@ class ApiService {
     }
   }
 
+
+
+// Add this to your SHARED ITEMS METHODS section
+Future<Map<String, dynamic>> updateSharedItemQuantity(String itemId, int newQuantity) async {
+  try {
+    print('🔄 Updating shared item $itemId quantity to $newQuantity');
+    
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/shared-items/$itemId'),
+      headers: headers,
+      body: jsonEncode({'quantity': newQuantity}),
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response body: ${response.body}');
+
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return {
+        'success': true,
+        'message': data['message'] ?? 'Quantity updated successfully',
+        'item': data['item'],
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to update quantity',
+        'statusCode': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('❌ Update quantity error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+
+
+
+  
+
   Future<Map<String, dynamic>> deleteSharedItem(String itemId) async {
     try {
       print('🔄 Deleting shared item $itemId');
