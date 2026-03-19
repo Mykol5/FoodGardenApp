@@ -1063,6 +1063,51 @@ class ApiService {
     return true;
   }
 
+
+  // Add to your ApiService class
+Future<Map<String, dynamic>> getChatMessages(String chatId) async {
+  try {
+    print('🔄 Getting chat messages for $chatId');
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/chats/$chatId/messages'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  } catch (e) {
+    print('❌ Error getting messages: $e');
+    return {'success': false, 'error': e.toString()};
+  }
+}
+
+Future<Map<String, dynamic>> sendMessage({
+  required String chatId,
+  required String recipientId,
+  required String text,
+  String? productId,
+}) async {
+  try {
+    print('🔄 Sending message to $recipientId');
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/messages'),
+      headers: headers,
+      body: jsonEncode({
+        'chatId': chatId,
+        'recipientId': recipientId,
+        'text': text,
+        'productId': productId,
+      }),
+    );
+    return jsonDecode(response.body);
+  } catch (e) {
+    print('❌ Error sending message: $e');
+    return {'success': false, 'error': e.toString()};
+  }
+}
+
+
+
+  
+
   // ============ HTTP METHODS ============
 
   Future<Map<String, dynamic>> httpGet(String endpoint) async {
