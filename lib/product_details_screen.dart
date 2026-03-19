@@ -1,5 +1,11 @@
-// lib/screens/product_details_screen.dart
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import 'messages_screen.dart';
+import 'providers/auth_provider.dart';
+import 'services/api_service.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> productData;
@@ -14,32 +20,300 @@ class ProductDetailsScreen extends StatefulWidget {
 }
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
+  final ApiService _apiService = ApiService();
+  
+  // Location related
+  GoogleMapController? _mapController;
+  LatLng? _pickupLocation;
+  LatLng? _userLocation;
+  double? _distanceInKm;
+  bool _isLoadingLocation = true;
+  String? _locationError;
+  
+  // Product data
+  late Map<String, dynamic> _productData;
+  int _currentQuantity;
+  bool _isClaiming = false;
+  bool _isUpdating = false;
+
+  _ProductDetailsScreenState() : _currentQuantity = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _productData = widget.productData;
+    _currentQuantity = _productData['quantity'] ?? 0;
+    _initializeLocation();
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initializeLocation() async {
+    // Get pickup location from product data
+    final latitude = _productData['latitude'];
+    final longitude = _productData['longitude'];
+    
+    if (latitude != null && longitude != null) {
+      setState(() {
+        _pickupLocation = LatLng(latitude.toDouble(), longitude.toDouble());
+      });
+    }
+    
+    // Get user's current location
+    await _getUserLocation();
+  }
+
+  Future<void> _getUserLocation() async {
+    setState(() {
+      _isLoadingLocation = true;
+      _locationError = null;
+    });
+
+    try {
+      // Check permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          _locationError = 'Location permissions are permanently denied';
+          _isLoadingLocation = false;
+        });
+        return;
+      }
+
+      // Get current position
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+
+      setState(() {
+        _userLocation = LatLng(position.latitude, position.longitude);
+      });
+
+      // Calculate distance if both locations are available
+      if (_pickupLocation != null && _userLocation != null) {
+        _calculateDistance();
+      }
+
+      // Animate camera to show both locations
+      _animateCameraToShowBoth();
+
+    } catch (e) {
+      print('Error getting location: $e');
+      setState(() {
+        _locationError = 'Could not get your location';
+      });
+    } finally {
+      setState(() {
+        _isLoadingLocation = false;
+      });
+    }
+  }
+
+  void _calculateDistance() {
+    if (_pickupLocation == null || _userLocation == null) return;
+
+    double distanceInMeters = Geolocator.distanceBetween(
+      _userLocation!.latitude,
+      _userLocation!.longitude,
+      _pickupLocation!.latitude,
+      _pickupLocation!.longitude,
+    );
+
+    setState(() {
+      _distanceInKm = distanceInMeters / 1000;
+    });
+  }
+
+  void _animateCameraToShowBoth() {
+    if (_mapController == null) return;
+    if (_pickupLocation == null && _userLocation == null) return;
+
+    if (_pickupLocation != null && _userLocation != null) {
+      // Show both locations
+      LatLngBounds bounds = LatLngBounds(
+        southwest: LatLng(
+          _pickupLocation!.latitude < _userLocation!.latitude 
+              ? _pickupLocation!.latitude 
+              : _userLocation!.latitude,
+          _pickupLocation!.longitude < _userLocation!.longitude 
+              ? _pickupLocation!.longitude 
+              : _userLocation!.longitude,
+        ),
+        northeast: LatLng(
+          _pickupLocation!.latitude > _userLocation!.latitude 
+              ? _pickupLocation!.latitude 
+              : _userLocation!.latitude,
+          _pickupLocation!.longitude > _userLocation!.longitude 
+              ? _pickupLocation!.longitude 
+              : _userLocation!.longitude,
+        ),
+      );
+
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngBounds(bounds, 50),
+      );
+    } else if (_pickupLocation != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(_pickupLocation!, 15),
+      );
+    }
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+    _animateCameraToShowBoth();
+  }
+
+  Future<void> _openInMaps() async {
+    if (_pickupLocation == null) return;
+
+    final url = 'https://www.google.com/maps/search/?api=1&query=${_pickupLocation!.latitude},${_pickupLocation!.longitude}';
+    
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open maps'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _claimItem() async {
+    if (_currentQuantity <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This item is no longer available'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isClaiming = true;
+    });
+
+    try {
+      // Update quantity in database
+      final newQuantity = _currentQuantity - 1;
+      
+      // You'll need to add this method to your ApiService
+      final result = await _apiService.updateSharedItemQuantity(
+        _productData['id'],
+        newQuantity,
+      );
+
+      if (result['success'] == true) {
+        setState(() {
+          _currentQuantity = newQuantity;
+          _productData['quantity'] = newQuantity;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Successfully claimed! ${newQuantity > 0 ? '$newQuantity left' : 'Last item claimed'}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // If no items left, you might want to update the status
+        if (newQuantity == 0) {
+          await _apiService.updateSharedItemStatus(
+            _productData['id'],
+            'claimed',
+          );
+        }
+      } else {
+        throw Exception(result['error']);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to claim: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isClaiming = false;
+      });
+    }
+  }
+
+  void _navigateToMessages() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUser = authProvider.currentUser;
+    final ownerId = _productData['user_id'];
+    
+    if (currentUser != null && ownerId != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MessagesScreen(
+            recipientId: ownerId,
+            recipientName: _productData['users']?['name'] ?? 'Gardener',
+            recipientImage: _productData['users']?['profile_image_url'],
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please login to send messages'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
+  String _getDistanceText() {
+    if (_distanceInKm == null) return 'Distance unknown';
+    if (_distanceInKm! < 1) {
+      return '${(_distanceInKm! * 1000).toStringAsFixed(0)} m away';
+    }
+    return '${_distanceInKm!.toStringAsFixed(1)} km away';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
     // Extract data safely with fallbacks
-    final imageUrl = widget.productData['image_url'] ?? 
-                     (widget.productData['imageUrl'] ?? 
+    final imageUrl = _productData['image_url'] ?? 
+                     (_productData['imageUrl'] ?? 
                      'https://lh3.googleusercontent.com/aida-public/AB6AXuDpxtSHzBQyEV3GHn4NJkaTgBDJvhkEmCPE_fYJKhG9nq3CdJ8RU3QCqpXLtCOQ0icow0WTwxn7XXJ8jSbNHXkXZMVCyyETaL_dqDF1qohnoQyLQCJNBbBZzouqvthS4kIwmme_0n_kylD71ANsa-Skd2viP8puRco7WpiL_tDd4IaJGiS7hwFo3XL2PzoEIb37olQn2rW5s9WWiek2L7tIkKyg_AWACHrxMui4OL7w74QJq0LtcyXVlPEXyZ64Nk_redTn5MvsYrCs');
     
-    final name = widget.productData['name'] ?? 
-                 (widget.productData['title'] ?? 'Fresh Produce');
+    final name = _productData['name'] ?? 
+                 (_productData['title'] ?? 'Fresh Produce');
     
-    final description = widget.productData['description'] ?? 
+    final description = _productData['description'] ?? 
                        'Freshly harvested from a local garden.';
     
-    final quantity = widget.productData['quantity'] ?? 2;
-    final quantityUnit = widget.productData['quantity_unit'] ?? 'lbs';
+    final quantityUnit = _productData['quantity_unit'] ?? 'lbs';
+    final itemLeftText = _currentQuantity == 0 
+        ? 'Claimed' 
+        : '$_currentQuantity $quantityUnit left';
     
-    final userData = widget.productData['users'] ?? {};
+    final userData = _productData['users'] ?? {};
     final userName = userData['name'] ?? 
-                     (widget.productData['user'] ?? 'Local Gardener');
+                     (_productData['user'] ?? 'Local Gardener');
     final userImage = userData['profile_image_url'] ?? 
                      'https://lh3.googleusercontent.com/aida-public/AB6AXuCS0jHPAmw5dMiQaK1bHEZcrto0FpYkJLEnjT6LV8uSWLCo5bUsK60px9QgtiDoQ7yPHK7w7ZLGMwlKDmnn8PX5PpG5K7SY6xFwWaSe7ljAu0ns8mkSx2Az9A3XRjE3qkuMtqijirhcDe9nsCmNsqRAImmu_F3q-uHlfHgf7wXW7wQ0zmONoWgpqAPLNkkFAa8REN8_t8Uev_HVtzsn_tTVH7jKyA28BKdKkyR_ix0nHaW9a294rw968H5orwER4gi6femx3_NxRZWC';
     
-    final location = widget.productData['location_text'] ?? 
-                     (widget.productData['location'] ?? 'Nearby');
+    final locationText = _productData['location_text'] ?? 
+                         (_productData['location'] ?? 'Nearby');
 
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF1A2421) : const Color(0xFFF9F8F6),
@@ -107,9 +381,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                widget.productData['status'] == 'available' 
+                                _productData['status'] == 'available' && _currentQuantity > 0
                                     ? 'Freshly Harvested' 
-                                    : widget.productData['status'] ?? 'Available',
+                                    : _productData['status'] ?? 'Available',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -119,11 +393,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               ),
                             ),
                             Text(
-                              '$quantity $quantityUnit left',
-                              style: const TextStyle(
+                              itemLeftText,
+                              style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFFE59866),
+                                color: _currentQuantity == 0 
+                                    ? Colors.grey 
+                                    : const Color(0xFFE59866),
                               ),
                             ),
                           ],
@@ -173,22 +449,25 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         Row(
                           children: [
                             // User Avatar
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(
-                                  color: const Color(0xFF39AC86).withOpacity(0.3),
-                                  width: 2,
+                            GestureDetector(
+                              onTap: _navigateToMessages,
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(
+                                    color: const Color(0xFF39AC86).withOpacity(0.3),
+                                    width: 2,
+                                  ),
+                                  image: DecorationImage(
+                                    image: NetworkImage(userImage),
+                                    fit: BoxFit.cover,
+                                    onError: (exception, stackTrace) {},
+                                  ),
                                 ),
-                                image: DecorationImage(
-                                  image: NetworkImage(userImage),
-                                  fit: BoxFit.cover,
-                                  onError: (exception, stackTrace) {},
-                                ),
+                                child: userImage.isEmpty ? const Icon(Icons.person) : null,
                               ),
-                              child: userImage.isEmpty ? const Icon(Icons.person) : null,
                             ),
 
                             const SizedBox(width: 12),
@@ -221,23 +500,26 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             ),
 
                             // Message Button
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isDarkMode 
-                                    ? const Color(0xFF2D3A35) 
-                                    : const Color(0xFFF9F8F6),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text(
-                                'Message',
-                                style: TextStyle(
-                                  color: Color(0xFF39AC86),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
+                            GestureDetector(
+                              onTap: _navigateToMessages,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode 
+                                      ? const Color(0xFF2D3A35) 
+                                      : const Color(0xFFF9F8F6),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'Message',
+                                  style: TextStyle(
+                                    color: Color(0xFF39AC86),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -342,7 +624,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ),
 
                       // Pickup Instructions if available
-                      if (widget.productData['pickup_instructions'] != null) ...[
+                      if (_productData['pickup_instructions'] != null) ...[
                         const SizedBox(height: 20),
                         Container(
                           padding: const EdgeInsets.all(16),
@@ -383,7 +665,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      widget.productData['pickup_instructions'],
+                                      _productData['pickup_instructions'],
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: const Color(0xFFE59866).withOpacity(0.8),
@@ -429,111 +711,142 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               ),
                             ],
                           ),
-                          Text(
-                            'Nearby',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: const Color(0xFF5C8A7A),
-                              fontWeight: FontWeight.w500,
+                          if (_distanceInKm != null)
+                            Text(
+                              _getDistanceText(),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF39AC86),
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
                         ],
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Location Text
+                      Text(
+                        locationText,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF5C8A7A),
+                        ),
                       ),
 
                       const SizedBox(height: 16),
 
                       // Map Section
                       Container(
-                        height: 192,
+                        height: 250,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          color: Colors.grey[300],
-                          image: const DecorationImage(
-                            image: NetworkImage(
-                              'https://lh3.googleusercontent.com/aida-public/AB6AXuDtlT2mJesD7s8iX89R_GPiN-_w_IGgXPVjnWvUrZj_6Nwx_20exmpachCfDSvdOMx7J8lYB_zFjvSZLzDumUk1LdOIsWFx76qzPf6-MvlJ5pnmVht1QtCAS9E8tu5A06KJbtyepYPiWYZ_9gSOTnrqqvO5W9v-FvxnPn27jYZm4YoqWnLqTC8bajTveD1PGER-wilGvZnP_UdAwrKE1FZpNkosFWfv8se-Xqj2k8gF08nkPGIugtDI0iSy-t2XDy7a-e6O8dhsVYy_',
-                            ),
-                            fit: BoxFit.cover,
+                          border: Border.all(
+                            color: const Color(0xFF39AC86).withOpacity(0.3),
                           ),
                         ),
-                        child: Stack(
-                          children: [
-                            // Pin Marker
-                            Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF39AC86),
-                                      borderRadius: BorderRadius.circular(24),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(0xFF39AC86).withOpacity(0.3),
-                                          blurRadius: 10,
-                                          spreadRadius: 2,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Stack(
+                            children: [
+                              // Real Google Map
+                              if (_pickupLocation != null)
+                                GoogleMap(
+                                  onMapCreated: _onMapCreated,
+                                  initialCameraPosition: CameraPosition(
+                                    target: _pickupLocation!,
+                                    zoom: 14,
+                                  ),
+                                  markers: {
+                                    if (_pickupLocation != null)
+                                      Marker(
+                                        markerId: const MarkerId('pickup-location'),
+                                        position: _pickupLocation!,
+                                        infoWindow: const InfoWindow(
+                                          title: 'Pickup Location',
                                         ),
-                                      ],
+                                        icon: BitmapDescriptor.defaultMarkerWithHue(
+                                          BitmapDescriptor.hueGreen,
+                                        ),
+                                      ),
+                                    if (_userLocation != null)
+                                      Marker(
+                                        markerId: const MarkerId('user-location'),
+                                        position: _userLocation!,
+                                        infoWindow: const InfoWindow(
+                                          title: 'Your Location',
+                                        ),
+                                        icon: BitmapDescriptor.defaultMarkerWithHue(
+                                          BitmapDescriptor.hueBlue,
+                                        ),
+                                      ),
+                                  },
+                                  myLocationEnabled: true,
+                                  myLocationButtonEnabled: false,
+                                  zoomControlsEnabled: false,
+                                  compassEnabled: false,
+                                )
+                              else
+                                Container(
+                                  color: Colors.grey[300],
+                                  child: const Center(
+                                    child: Text('Location not available'),
+                                  ),
+                                ),
+                              
+                              // Loading indicator
+                              if (_isLoadingLocation)
+                                Container(
+                                  color: Colors.black.withOpacity(0.3),
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      color: Color(0xFF39AC86),
+                                    ),
+                                  ),
+                                ),
+
+                              // Open in Maps Button
+                              Positioned(
+                                bottom: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  onTap: _openInMaps,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: isDarkMode 
+                                          ? Colors.black.withOpacity(0.7) 
+                                          : Colors.white.withOpacity(0.9),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Icon(
-                                      Icons.eco,
-                                      color: Colors.white,
-                                      size: 24,
+                                      Icons.open_in_new,
+                                      color: Color(0xFF39AC86),
+                                      size: 20,
                                     ),
                                   ),
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    margin: const EdgeInsets.only(top: -4),
-                                    transform: Matrix4.rotationZ(45 * 3.1415926535 / 180),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF39AC86),
-                                      borderRadius: BorderRadius.circular(1),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // Open in Maps Button
-                            Positioned(
-                              bottom: 8,
-                              right: 8,
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: isDarkMode 
-                                      ? Colors.black.withOpacity(0.7) 
-                                      : Colors.white.withOpacity(0.9),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.open_in_new,
-                                  color: Color(0xFF39AC86),
-                                  size: 20,
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
 
-                      const SizedBox(height: 12),
-                      
-                      // Location Text
-                      Text(
-                        location,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF5C8A7A),
+                      if (_locationError != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _locationError!,
+                          style: const TextStyle(
+                            color: Colors.orange,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 100), // Space for bottom button
+                const SizedBox(height: 100),
               ],
             ),
           ),
@@ -672,50 +985,73 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
                   // Claim Button
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        // Handle claim functionality
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Claimed ${name}!'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      },
-                      child: Container(
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF39AC86),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF39AC86).withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                    child: _currentQuantity == 0
+                        ? Container(
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.shopping_basket,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Claim Produce',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                            child: const Center(
+                              child: Text(
+                                'Claimed',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
+                          )
+                        : GestureDetector(
+                            onTap: _isClaiming ? null : _claimItem,
+                            child: Container(
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: _isClaiming 
+                                    ? Colors.grey 
+                                    : const Color(0xFF39AC86),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: _isClaiming ? null : [
+                                  BoxShadow(
+                                    color: const Color(0xFF39AC86).withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: _isClaiming
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.shopping_basket,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Claim Produce',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -754,11 +1090,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 }
-
-
-
-
-
 
 
 
