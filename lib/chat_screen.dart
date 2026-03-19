@@ -4,12 +4,18 @@ class ChatScreen extends StatefulWidget {
   final String itemName;
   final String userName;
   final String userImage;
+  final String? productId;
+  final String? productStatus;
+  final int quantity;
   
   const ChatScreen({
     Key? key,
     required this.itemName,
     required this.userName,
     required this.userImage,
+    this.productId,
+    this.productStatus,
+    this.quantity = 0,
   }) : super(key: key);
 
   @override
@@ -44,6 +50,25 @@ class _ChatScreenState extends State<ChatScreen> {
     },
   ];
 
+  Color _getStatusColor() {
+    switch(widget.productStatus) {
+      case 'In Progress':
+        return Color(0xFFFFC300);
+      case 'Claimed':
+        return Color(0xFF29A366);
+      case 'Completed':
+        return Color(0xFF668799);
+      default:
+        return Color(0xFF29A366);
+    }
+  }
+
+  String _getStatusText() {
+    if (widget.quantity == 0) return 'Claimed';
+    if (widget.productStatus != null) return widget.productStatus!;
+    return 'Available';
+  }
+
   @override
   void dispose() {
     _messageController.dispose();
@@ -53,13 +78,15 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final statusColor = _getStatusColor();
+    final statusText = _getStatusText();
     
     return Scaffold(
       backgroundColor: isDarkMode ? Color(0xFF201712) : Color(0xFFF6F5F3),
       body: SafeArea(
         child: Column(
           children: [
-            // Top Navigation Bar
+            // Top Navigation Bar with Status
             Container(
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).padding.top + 16,
@@ -94,14 +121,27 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                       SizedBox(height: 2),
-                      Text(
-                        'Active Claim',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFC35822),
-                          letterSpacing: 2,
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            statusText,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: statusColor,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -119,7 +159,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
 
-            // Produce Banner
+            // Produce Banner with Status
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Container(
@@ -128,7 +168,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   color: isDarkMode ? Color(0xFF333333) : Color(0xFFFBF9F8),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Color(0xFFC35822).withOpacity(0.1),
+                    color: statusColor.withOpacity(0.1),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -150,7 +190,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           fit: BoxFit.cover,
                         ),
                         border: Border.all(
-                          color: Color(0xFFC35822).withOpacity(0.05),
+                          color: statusColor.withOpacity(0.05),
                         ),
                       ),
                     ),
@@ -168,13 +208,28 @@ class _ChatScreenState extends State<ChatScreen> {
                             ),
                           ),
                           SizedBox(height: 2),
-                          Text(
-                            'Ready for pickup',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFFC35822),
-                            ),
+                          Row(
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: statusColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                widget.quantity > 0 
+                                    ? '${widget.quantity} left for pickup'
+                                    : 'Ready for pickup',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -182,18 +237,18 @@ class _ChatScreenState extends State<ChatScreen> {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Color(0xFFC35822),
+                        color: statusColor,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFFC35822).withOpacity(0.2),
+                            color: statusColor.withOpacity(0.2),
                             blurRadius: 8,
                             offset: Offset(0, 2),
                           ),
                         ],
                       ),
                       child: Text(
-                        'Claimed',
+                        widget.quantity == 0 ? 'Claimed' : 'Claim',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -216,7 +271,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     children: [
                       Expanded(
                         child: Divider(
-                          color: Color(0xFFC35822).withOpacity(0.1),
+                          color: statusColor.withOpacity(0.1),
                           thickness: 1,
                         ),
                       ),
@@ -234,7 +289,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       Expanded(
                         child: Divider(
-                          color: Color(0xFFC35822).withOpacity(0.1),
+                          color: statusColor.withOpacity(0.1),
                           thickness: 1,
                         ),
                       ),
@@ -262,7 +317,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Color(0xFFC35822).withOpacity(0.1),
+                          color: statusColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
@@ -271,7 +326,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           },
                           icon: Icon(
                             Icons.add_a_photo,
-                            color: Color(0xFFC35822),
+                            color: statusColor,
                             size: 20,
                           ),
                           padding: EdgeInsets.zero,
@@ -335,11 +390,11 @@ class _ChatScreenState extends State<ChatScreen> {
                                 height: 32,
                                 margin: EdgeInsets.only(right: 4),
                                 decoration: BoxDecoration(
-                                  color: Color(0xFFC35822),
+                                  color: statusColor,
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Color(0xFFC35822).withOpacity(0.3),
+                                      color: statusColor.withOpacity(0.3),
                                       blurRadius: 4,
                                       offset: Offset(0, 2),
                                     ),
@@ -388,6 +443,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageBubble(Map<String, dynamic> message, bool isDarkMode) {
     final isMe = message['isMe'] == true;
+    final statusColor = _getStatusColor();
     
     return Container(
       margin: EdgeInsets.only(bottom: 16),
@@ -417,7 +473,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFFC35822),
+                        color: statusColor,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -431,7 +487,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   decoration: BoxDecoration(
                     color: isMe
                         ? Color(0xFFC4D3BB).withOpacity(isDarkMode ? 0.2 : 1)
-                        : Color(0xFFC35822),
+                        : statusColor,
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(12),
                       topRight: Radius.circular(12),
