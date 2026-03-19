@@ -841,50 +841,82 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> updateSharedItemQuantity(String itemId, int newQuantity) async {
+    try {
+      print('🔄 Updating shared item $itemId quantity to $newQuantity');
+      
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/shared-items/$itemId'),
+        headers: headers,
+        body: jsonEncode({'quantity': newQuantity}),
+      );
 
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
 
-// Add this to your SHARED ITEMS METHODS section
-Future<Map<String, dynamic>> updateSharedItemQuantity(String itemId, int newQuantity) async {
-  try {
-    print('🔄 Updating shared item $itemId quantity to $newQuantity');
-    
-    final response = await http.put(
-      Uri.parse('$baseUrl/api/shared-items/$itemId'),
-      headers: headers,
-      body: jsonEncode({'quantity': newQuantity}),
-    );
+      final Map<String, dynamic> data = jsonDecode(response.body);
 
-    print('📥 Response status: ${response.statusCode}');
-    print('📥 Response body: ${response.body}');
-
-    final Map<String, dynamic> data = jsonDecode(response.body);
-
-    if (response.statusCode == 200 && data['success'] == true) {
-      return {
-        'success': true,
-        'message': data['message'] ?? 'Quantity updated successfully',
-        'item': data['item'],
-      };
-    } else {
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Quantity updated successfully',
+          'item': data['item'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Failed to update quantity',
+          'statusCode': response.statusCode,
+        };
+      }
+    } catch (e) {
+      print('❌ Update quantity error: $e');
       return {
         'success': false,
-        'error': data['error'] ?? 'Failed to update quantity',
-        'statusCode': response.statusCode,
+        'error': 'Connection error: $e',
       };
     }
-  } catch (e) {
-    print('❌ Update quantity error: $e');
-    return {
-      'success': false,
-      'error': 'Connection error: $e',
-    };
   }
-}
 
+  Future<Map<String, dynamic>> updateSharedItem(String itemId, {int? quantity, String? status}) async {
+    try {
+      print('🔄 Updating shared item $itemId');
+      final Map<String, dynamic> updateData = {};
+      if (quantity != null) updateData['quantity'] = quantity;
+      if (status != null) updateData['status'] = status;
+      
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/shared-items/$itemId'),
+        headers: headers,
+        body: jsonEncode(updateData),
+      );
 
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
 
+      final Map<String, dynamic> data = jsonDecode(response.body);
 
-  
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Item updated successfully',
+          'item': data['item'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Failed to update item',
+          'statusCode': response.statusCode,
+        };
+      }
+    } catch (e) {
+      print('❌ Update item error: $e');
+      return {
+        'success': false,
+        'error': 'Connection error: $e',
+      };
+    }
+  }
 
   Future<Map<String, dynamic>> deleteSharedItem(String itemId) async {
     try {
