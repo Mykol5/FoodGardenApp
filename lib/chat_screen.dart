@@ -4,6 +4,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'services/api_service.dart';
+import 'dart:convert';
 
 class ChatScreen extends StatefulWidget {
   final String itemName;
