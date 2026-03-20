@@ -4,7 +4,6 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'services/api_service.dart';
-import 'dart:convert';
 
 class ChatScreen extends StatefulWidget {
   final String itemName;
@@ -35,7 +34,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  late WebSocketChannel _channel;
+  WebSocketChannel? _channel;
   final ApiService _apiService = ApiService();
   
   List<Map<String, dynamic>> _messages = [];
@@ -43,8 +42,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isConnected = false;
   String? _connectionError;
   
-  // WebSocket server URL - update this to your backend WebSocket URL
-  // static const String webSocketUrl = 'wss://foodsharingbackend.onrender.com/ws';
+  // WebSocket server URL
   static const String webSocketUrl = 'wss://foodsharingbackend.onrender.com';
 
   @override
@@ -59,21 +57,25 @@ class _ChatScreenState extends State<ChatScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
       
-      // Connect to WebSocket with authentication
-      // _channel = WebSocketChannel.connect(
-      //   Uri.parse('$webSocketUrl?token=$token&chatId=${widget.chatId}'),
-      // );
-
+      if (token == null) {
+        setState(() {
+          _connectionError = 'Not authenticated';
+          _isConnected = false;
+        });
+        return;
+      }
+      
       _channel = WebSocketChannel.connect(
         Uri.parse('$webSocketUrl/ws/user?token=$token'),
       );
 
-      _channel.stream.listen(
+      _channel!.stream.listen(
         (message) {
           final data = jsonDecode(message);
           _handleIncomingMessage(data);
         },
         onError: (error) {
+          print('WebSocket error: $error');
           setState(() {
             _connectionError = 'Connection error: $error';
             _isConnected = false;
@@ -94,7 +96,15 @@ class _ChatScreenState extends State<ChatScreen> {
         _isConnected = true;
         _connectionError = null;
       });
+      
+      // Subscribe to the chat
+      _channel!.sink.add(jsonEncode({
+        'type': 'subscribe',
+        'chatId': widget.chatId,
+      }));
+      
     } catch (e) {
+      print('Failed to connect WebSocket: $e');
       setState(() {
         _connectionError = 'Failed to connect: $e';
         _isConnected = false;
@@ -108,11 +118,29 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     try {
-      // Load messages from your API
       final result = await _apiService.getChatMessages(widget.chatId);
       if (result['success'] == true) {
+        final messages = result['messages'] ?? [];
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final currentUserId = authProvider.userId;
+        
         setState(() {
-          _messages = List<Map<String, dynamic>>.from(result['messages'] ?? []);
+          _messages = messages.map((msg) {
+            // Parse timestamp safely
+            final timestamp = _parseTimestamp(msg['created_at'] ?? msg['timestamp']);
+            
+            return {
+              'id': msg['id'],
+              'text': msg['text'],
+              'isMe': msg['sender_id'] == currentUserId,
+              'time': _formatTime(timestamp),
+              'userName': msg['sender']?['name'] ?? 
+                          (msg['sender_id'] == currentUserId ? 'You' : widget.userName),
+              'userImage': msg['sender']?['profile_image_url'] ?? 
+                          (msg['sender_id'] == currentUserId ? '' : widget.userImage),
+              'isRead': msg['is_read'] ?? false,
+            };
+          }).toList();
         });
         
         // Scroll to bottom after loading
@@ -122,6 +150,20 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } catch (e) {
       print('Error loading messages: $e');
+      // Add sample welcome message if no messages
+      if (_messages.isEmpty) {
+        setState(() {
+          _messages.add({
+            'id': 'welcome',
+            'text': 'Start a conversation with ${widget.userName} about ${widget.itemName}!',
+            'isMe': false,
+            'time': _formatTime(DateTime.now()),
+            'userName': 'System',
+            'userImage': '',
+            'isRead': true,
+          });
+        });
+      }
     } finally {
       setState(() {
         _isLoading = false;
@@ -129,44 +171,93 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  DateTime _parseTimestamp(String? timestamp) {
+    if (timestamp == null || timestamp.isEmpty) return DateTime.now();
+    try {
+      // Handle ISO format with timezone (e.g., 2026-03-20T15:00:34.378+00:00)
+      if (timestamp.contains('+')) {
+        final baseTime = timestamp.split('+')[0];
+        return DateTime.parse(baseTime);
+      } else if (timestamp.contains('Z')) {
+        return DateTime.parse(timestamp);
+      } else {
+        return DateTime.parse(timestamp);
+      }
+    } catch (e) {
+      print('Error parsing timestamp: $timestamp, error: $e');
+      return DateTime.now();
+    }
+  }
+
   void _handleIncomingMessage(Map<String, dynamic> data) {
-    setState(() {
-      _messages.add({
-        'id': data['id'],
-        'text': data['text'],
-        'isMe': data['senderId'] == Provider.of<AuthProvider>(context, listen: false).userId,
-        'time': _formatTime(DateTime.parse(data['timestamp'])),
-        'userName': data['senderName'],
-        'userImage': data['senderImage'],
-        'isRead': data['isRead'] ?? false,
+    if (data['type'] == 'new_message') {
+      final messageData = data['message'];
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final currentUserId = authProvider.userId;
+      
+      setState(() {
+        _messages.add({
+          'id': messageData['id'],
+          'text': messageData['text'],
+          'isMe': messageData['senderId'] == currentUserId,
+          'time': _formatTime(_parseTimestamp(messageData['timestamp'])),
+          'userName': messageData['senderName'] ?? widget.userName,
+          'userImage': messageData['senderImage'] ?? widget.userImage,
+          'isRead': false,
+        });
       });
-    });
-    
-    // Scroll to bottom on new message
-    _scrollToBottom();
-    
-    // Mark message as read if it's from other user
-    if (!data['isMe']) {
-      _markAsRead(data['id']);
+      
+      // Scroll to bottom on new message
+      _scrollToBottom();
+      
+      // Mark message as read if it's from other user
+      if (messageData['senderId'] != currentUserId) {
+        _markAsRead(messageData['id']);
+      }
+    } else if (data['type'] == 'message_sent') {
+      // Update the temporary message status
+      final messageData = data['message'];
+      setState(() {
+        final index = _messages.indexWhere((m) => m['id'] == messageData['id']);
+        if (index != -1) {
+          _messages[index]['isSending'] = false;
+        }
+      });
+    } else if (data['type'] == 'messages_read') {
+      // Update read status for messages
+      final messageIds = data['messageIds'] as List;
+      setState(() {
+        for (var message in _messages) {
+          if (messageIds.contains(message['id'])) {
+            message['isRead'] = true;
+          }
+        }
+      });
     }
   }
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
     }
   }
 
   void _markAsRead(String messageId) {
-    _channel.sink.add(jsonEncode({
-      'type': 'mark_read',
-      'messageId': messageId,
-      'chatId': widget.chatId,
-    }));
+    if (_channel != null && _isConnected) {
+      _channel!.sink.add(jsonEncode({
+        'type': 'mark_read',
+        'chatId': widget.chatId,
+        'messageIds': [messageId],
+      }));
+    }
   }
 
   Future<void> _sendMessage() async {
@@ -179,11 +270,12 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.clear();
 
     // Create temporary message for optimistic UI update
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final tempMessage = {
-      'id': 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      'id': tempId,
       'text': messageText,
       'isMe': true,
-      'time': 'Just now',
+      'time': 'Sending...',
       'userName': currentUser?['name'] ?? 'You',
       'userImage': currentUser?['profile_image_url'] ?? '',
       'isRead': false,
@@ -198,47 +290,58 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       // Send via WebSocket
-      _channel.sink.add(jsonEncode({
-        'type': 'message',
-        'chatId': widget.chatId,
-        'recipientId': widget.recipientId,
-        'text': messageText,
-        'productId': widget.productId,
-        'timestamp': DateTime.now().toIso8601String(),
-      }));
+      if (_channel != null && _isConnected) {
+        _channel!.sink.add(jsonEncode({
+          'type': 'message',
+          'chatId': widget.chatId,
+          'recipientId': widget.recipientId,
+          'text': messageText,
+          'productId': widget.productId,
+        }));
+      }
 
       // Also save to database via API as backup
-      await _apiService.sendMessage(
+      final result = await _apiService.sendMessage(
         chatId: widget.chatId,
         recipientId: widget.recipientId,
         text: messageText,
         productId: widget.productId,
       );
 
-      // Update temp message to sent
-      setState(() {
-        final index = _messages.indexWhere((m) => m['id'] == tempMessage['id']);
-        if (index != -1) {
-          _messages[index]['isSending'] = false;
-        }
-      });
+      if (result['success'] == true) {
+        // Update temp message with real ID and sent status
+        setState(() {
+          final index = _messages.indexWhere((m) => m['id'] == tempId);
+          if (index != -1) {
+            _messages[index]['id'] = result['message']['id'];
+            _messages[index]['time'] = _formatTime(DateTime.now());
+            _messages[index]['isSending'] = false;
+          }
+        });
+      } else {
+        throw Exception(result['error']);
+      }
 
     } catch (e) {
+      print('Error sending message: $e');
       // Mark message as failed
       setState(() {
-        final index = _messages.indexWhere((m) => m['id'] == tempMessage['id']);
+        final index = _messages.indexWhere((m) => m['id'] == tempId);
         if (index != -1) {
           _messages[index]['isFailed'] = true;
           _messages[index]['isSending'] = false;
+          _messages[index]['time'] = 'Failed';
         }
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to send message: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send message: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -252,8 +355,12 @@ class _ChatScreenState extends State<ChatScreen> {
       return '${difference.inMinutes}m ago';
     } else if (difference.inDays < 1) {
       return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-    } else {
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
       return '${time.day}/${time.month}';
+    } else {
+      return '${time.day}/${time.month}/${time.year}';
     }
   }
 
@@ -280,7 +387,16 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
-    _channel.sink.close();
+    if (_channel != null) {
+      // Unsubscribe before closing
+      if (_isConnected) {
+        _channel!.sink.add(jsonEncode({
+          'type': 'unsubscribe',
+          'chatId': widget.chatId,
+        }));
+      }
+      _channel!.sink.close();
+    }
     super.dispose();
   }
 
@@ -398,6 +514,9 @@ class _ChatScreenState extends State<ChatScreen> {
                             ? DecorationImage(
                                 image: NetworkImage(widget.userImage),
                                 fit: BoxFit.cover,
+                                onError: (exception, stackTrace) {
+                                  print('Error loading user image: $exception');
+                                },
                               )
                             : null,
                         color: statusColor.withOpacity(0.1),
@@ -783,7 +902,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 
-                if (isMe && message['isRead'] == true)
+                if (isMe && message['isRead'] == true && !isSending)
                   Padding(
                     padding: const EdgeInsets.only(right: 8, top: 4),
                     child: Text(
@@ -885,7 +1004,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 }
-
 
 
 
