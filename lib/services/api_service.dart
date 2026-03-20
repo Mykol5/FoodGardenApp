@@ -1064,7 +1064,20 @@ class ApiService {
   }
 
 
-  // Add to your ApiService class
+Future<Map<String, dynamic>> getUserChats() async {
+  try {
+    print('🔄 Getting user chats');
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/chats'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  } catch (e) {
+    print('❌ Error getting chats: $e');
+    return {'success': false, 'error': e.toString()};
+  }
+}
+
 Future<Map<String, dynamic>> getChatMessages(String chatId) async {
   try {
     print('🔄 Getting chat messages for $chatId');
@@ -1100,6 +1113,21 @@ Future<Map<String, dynamic>> sendMessage({
     return jsonDecode(response.body);
   } catch (e) {
     print('❌ Error sending message: $e');
+    return {'success': false, 'error': e.toString()};
+  }
+}
+
+Future<Map<String, dynamic>> markMessagesAsRead(String chatId, List<String> messageIds) async {
+  try {
+    print('🔄 Marking messages as read in $chatId');
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/chats/$chatId/read'),
+      headers: headers,
+      body: jsonEncode({'messageIds': messageIds}),
+    );
+    return jsonDecode(response.body);
+  } catch (e) {
+    print('❌ Error marking messages as read: $e');
     return {'success': false, 'error': e.toString()};
   }
 }
