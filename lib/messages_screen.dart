@@ -66,8 +66,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
         return;
       }
       
+      // _channel = WebSocketChannel.connect(
+      //   Uri.parse('$webSocketUrl/ws/user?token=$token'),
+      // );
+
       _channel = WebSocketChannel.connect(
-        Uri.parse('$webSocketUrl/ws/user?token=$token'),
+        Uri.parse('$webSocketUrl/ws?token=$token'),
       );
 
       _channel!.stream.listen(
