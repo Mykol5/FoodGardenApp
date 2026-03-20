@@ -44,7 +44,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
   bool _isConnected = false;
 
   // WebSocket server URL - update this to your backend WebSocket URL
-  static const String webSocketUrl = 'wss://foodsharingbackend.onrender.com/ws';
+  // static const String webSocketUrl = 'wss://foodsharingbackend.onrender.com/ws';
+  static const String webSocketUrl = 'wss://foodsharingbackend.onrender.com';
 
   @override
   void initState() {
@@ -62,7 +63,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       final token = authProvider.token;
       
       _channel = WebSocketChannel.connect(
-        Uri.parse('$webSocketUrl/user?token=$token'),
+        Uri.parse('$webSocketUrl/ws/user?token=$token'),
       );
 
       _channel!.stream.listen(
