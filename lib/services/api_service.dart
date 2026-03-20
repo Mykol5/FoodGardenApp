@@ -1133,6 +1133,48 @@ Future<Map<String, dynamic>> markMessagesAsRead(String chatId, List<String> mess
 }
 
 
+  // Add to your ApiService class
+Future<Map<String, dynamic>> createOrGetChat({
+  required String recipientId,
+  String? productId,
+}) async {
+  try {
+    print('🔄 Creating or getting chat with recipient: $recipientId');
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/chats'),
+      headers: headers,
+      body: jsonEncode({
+        'recipientId': recipientId,
+        'productId': productId,
+      }),
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response body: ${response.body}');
+
+    final Map<String, dynamic> data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      return {
+        'success': true,
+        'chat': data['chat'],
+      };
+    } else {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Failed to create chat',
+      };
+    }
+  } catch (e) {
+    print('❌ Create chat error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
 
   
 
