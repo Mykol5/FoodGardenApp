@@ -65,10 +65,6 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
       
-      // _channel = WebSocketChannel.connect(
-      //   Uri.parse('$webSocketUrl/ws/user?token=$token'),
-      // );
-
       _channel = WebSocketChannel.connect(
         Uri.parse('$webSocketUrl/ws?token=$token'),
       );
@@ -89,7 +85,6 @@ class _ChatScreenState extends State<ChatScreen> {
           setState(() {
             _isConnected = false;
           });
-          // Attempt to reconnect after 3 seconds
           Future.delayed(const Duration(seconds: 3), () {
             if (mounted) _connectWebSocket();
           });
@@ -130,7 +125,6 @@ class _ChatScreenState extends State<ChatScreen> {
         
         setState(() {
           _messages = messages.map((msg) {
-            // Parse timestamp safely
             final timestamp = _parseTimestamp(msg['created_at'] ?? msg['timestamp']);
             
             return {
@@ -147,14 +141,12 @@ class _ChatScreenState extends State<ChatScreen> {
           }).toList();
         });
         
-        // Scroll to bottom after loading
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _scrollToBottom();
         });
       }
     } catch (e) {
       print('Error loading messages: $e');
-      // Add sample welcome message if no messages
       if (_messages.isEmpty) {
         setState(() {
           _messages.add({
@@ -178,7 +170,6 @@ class _ChatScreenState extends State<ChatScreen> {
   DateTime _parseTimestamp(String? timestamp) {
     if (timestamp == null || timestamp.isEmpty) return DateTime.now();
     try {
-      // Handle ISO format with timezone (e.g., 2026-03-20T15:00:34.378+00:00)
       if (timestamp.contains('+')) {
         final baseTime = timestamp.split('+')[0];
         return DateTime.parse(baseTime);
@@ -199,36 +190,37 @@ class _ChatScreenState extends State<ChatScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final currentUserId = authProvider.userId;
       
-      setState(() {
-        _messages.add({
-          'id': messageData['id'],
-          'text': messageData['text'],
-          'isMe': messageData['senderId'] == currentUserId,
-          'time': _formatTime(_parseTimestamp(messageData['timestamp'])),
-          'userName': messageData['senderName'] ?? widget.userName,
-          'userImage': messageData['senderImage'] ?? widget.userImage,
-          'isRead': false,
+      // Check if message already exists (to prevent duplicates)
+      final bool exists = _messages.any((m) => m['id'] == messageData['id']);
+      if (!exists) {
+        setState(() {
+          _messages.add({
+            'id': messageData['id'],
+            'text': messageData['text'],
+            'isMe': messageData['senderId'] == currentUserId,
+            'time': _formatTime(_parseTimestamp(messageData['timestamp'])),
+            'userName': messageData['senderName'] ?? widget.userName,
+            'userImage': messageData['senderImage'] ?? widget.userImage,
+            'isRead': false,
+          });
         });
-      });
-      
-      // Scroll to bottom on new message
-      _scrollToBottom();
-      
-      // Mark message as read if it's from other user
-      if (messageData['senderId'] != currentUserId) {
-        _markAsRead(messageData['id']);
+        
+        _scrollToBottom();
+        
+        if (messageData['senderId'] != currentUserId) {
+          _markAsRead(messageData['id']);
+        }
       }
     } else if (data['type'] == 'message_sent') {
-      // Update the temporary message status
       final messageData = data['message'];
       setState(() {
         final index = _messages.indexWhere((m) => m['id'] == messageData['id']);
         if (index != -1) {
           _messages[index]['isSending'] = false;
+          _messages[index]['time'] = _formatTime(DateTime.now());
         }
       });
     } else if (data['type'] == 'messages_read') {
-      // Update read status for messages
       final messageIds = data['messageIds'] as List;
       setState(() {
         for (var message in _messages) {
@@ -269,12 +261,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final currentUser = authProvider.currentUser;
+    final currentUserId = authProvider.userId;
     
     final messageText = _messageController.text.trim();
     _messageController.clear();
 
-    // Create temporary message for optimistic UI update
+    // Create temporary ID
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    
+    // Add message optimistically
     final tempMessage = {
       'id': tempId,
       'text': messageText,
@@ -289,11 +284,10 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       _messages.add(tempMessage);
     });
-    
     _scrollToBottom();
 
     try {
-      // Send via WebSocket
+      // Send ONLY via WebSocket (not both)
       if (_channel != null && _isConnected) {
         _channel!.sink.add(jsonEncode({
           'type': 'message',
@@ -302,33 +296,30 @@ class _ChatScreenState extends State<ChatScreen> {
           'text': messageText,
           'productId': widget.productId,
         }));
-      }
-
-      // Also save to database via API as backup
-      final result = await _apiService.sendMessage(
-        chatId: widget.chatId,
-        recipientId: widget.recipientId,
-        text: messageText,
-        productId: widget.productId,
-      );
-
-      if (result['success'] == true) {
-        // Update temp message with real ID and sent status
-        setState(() {
-          final index = _messages.indexWhere((m) => m['id'] == tempId);
-          if (index != -1) {
-            _messages[index]['id'] = result['message']['id'];
-            _messages[index]['time'] = _formatTime(DateTime.now());
-            _messages[index]['isSending'] = false;
-          }
-        });
       } else {
-        throw Exception(result['error']);
+        // Fallback to API if WebSocket is not connected
+        final result = await _apiService.sendMessage(
+          chatId: widget.chatId,
+          recipientId: widget.recipientId,
+          text: messageText,
+          productId: widget.productId,
+        );
+        
+        if (result['success'] == true) {
+          setState(() {
+            final index = _messages.indexWhere((m) => m['id'] == tempId);
+            if (index != -1) {
+              _messages[index]['id'] = result['message']['id'];
+              _messages[index]['isSending'] = false;
+              _messages[index]['time'] = _formatTime(DateTime.now());
+            }
+          });
+        } else {
+          throw Exception(result['error']);
+        }
       }
-
     } catch (e) {
       print('Error sending message: $e');
-      // Mark message as failed
       setState(() {
         final index = _messages.indexWhere((m) => m['id'] == tempId);
         if (index != -1) {
@@ -392,7 +383,6 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.dispose();
     _scrollController.dispose();
     if (_channel != null) {
-      // Unsubscribe before closing
       if (_isConnected) {
         _channel!.sink.add(jsonEncode({
           'type': 'unsubscribe',
@@ -518,9 +508,6 @@ class _ChatScreenState extends State<ChatScreen> {
                             ? DecorationImage(
                                 image: NetworkImage(widget.userImage),
                                 fit: BoxFit.cover,
-                                onError: (exception, stackTrace) {
-                                  print('Error loading user image: $exception');
-                                },
                               )
                             : null,
                         color: statusColor.withOpacity(0.1),
@@ -686,7 +673,6 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               child: Row(
                 children: [
-                  // Photo Button
                   Container(
                     width: 40,
                     height: 40,
@@ -707,8 +693,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  
-                  // Message Input
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
@@ -906,7 +890,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 
-                if (isMe && message['isRead'] == true && !isSending)
+                if (isMe && message['isRead'] == true && !isSending && !isFailed)
                   Padding(
                     padding: const EdgeInsets.only(right: 8, top: 4),
                     child: Text(
@@ -953,7 +937,6 @@ class _ChatScreenState extends State<ChatScreen> {
               title: const Text('Block User'),
               onTap: () {
                 Navigator.pop(context);
-                // Implement block user functionality
               },
             ),
             ListTile(
@@ -961,7 +944,6 @@ class _ChatScreenState extends State<ChatScreen> {
               title: const Text('Report'),
               onTap: () {
                 Navigator.pop(context);
-                // Implement report functionality
               },
             ),
             ListTile(
@@ -969,7 +951,6 @@ class _ChatScreenState extends State<ChatScreen> {
               title: const Text('Delete Chat'),
               onTap: () {
                 Navigator.pop(context);
-                // Implement delete chat functionality
               },
             ),
           ],
@@ -991,7 +972,6 @@ class _ChatScreenState extends State<ChatScreen> {
               title: const Text('Send Photo'),
               onTap: () {
                 Navigator.pop(context);
-                // Implement photo picker
               },
             ),
             ListTile(
@@ -999,7 +979,6 @@ class _ChatScreenState extends State<ChatScreen> {
               title: const Text('Share Location'),
               onTap: () {
                 Navigator.pop(context);
-                // Implement location sharing
               },
             ),
           ],
@@ -1008,7 +987,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 }
-
 
 
 
