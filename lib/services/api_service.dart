@@ -1176,6 +1176,33 @@ Future<Map<String, dynamic>> createOrGetChat({
 }
 
 
+
+  Future<Map<String, dynamic>> getCropQuestions() async {
+  final response = await http.get(
+    Uri.parse('$baseUrl/api/questions'),
+    headers: headers,
+  );
+  return jsonDecode(response.body);
+}
+
+Future<Map<String, dynamic>> postCropQuestion(Map<String, dynamic> data) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/api/questions'),
+    headers: headers,
+    body: jsonEncode(data),
+  );
+  return jsonDecode(response.body);
+}
+
+Future<Map<String, dynamic>> postAnswer(String questionId, String answer) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/api/questions/$questionId/answers'),
+    headers: headers,
+    body: jsonEncode({'answer': answer}),
+  );
+  return jsonDecode(response.body);
+}
+
   
 
   // ============ HTTP METHODS ============
