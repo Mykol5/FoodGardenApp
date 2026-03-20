@@ -44,7 +44,8 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _connectionError;
   
   // WebSocket server URL - update this to your backend WebSocket URL
-  static const String webSocketUrl = 'wss://foodsharingbackend.onrender.com/ws';
+  // static const String webSocketUrl = 'wss://foodsharingbackend.onrender.com/ws';
+  static const String webSocketUrl = 'wss://foodsharingbackend.onrender.com';
 
   @override
   void initState() {
@@ -59,8 +60,12 @@ class _ChatScreenState extends State<ChatScreen> {
       final token = authProvider.token;
       
       // Connect to WebSocket with authentication
+      // _channel = WebSocketChannel.connect(
+      //   Uri.parse('$webSocketUrl?token=$token&chatId=${widget.chatId}'),
+      // );
+
       _channel = WebSocketChannel.connect(
-        Uri.parse('$webSocketUrl?token=$token&chatId=${widget.chatId}'),
+        Uri.parse('$webSocketUrl/ws/user?token=$token'),
       );
 
       _channel.stream.listen(
