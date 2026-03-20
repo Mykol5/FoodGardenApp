@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'chat_screen.dart';
 import 'providers/auth_provider.dart';
 import 'services/api_service.dart';
+import 'dart:convert';
 
 class MessagesScreen extends StatefulWidget {
   final String? recipientId;
@@ -258,9 +259,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
     });
   }
 
-  int _getUnreadCount() {
-    return _chats.fold(0, (sum, chat) => sum + (chat['unreadCount'] ?? 0));
+int _getUnreadCount() {
+  int count = 0;
+  for (var chat in _chats) {
+    final unread = chat['unreadCount'];
+    if (unread != null) {
+      count += unread as int;
+    }
   }
+  return count;
+}
 
   Color _getStatusColor(String status) {
     switch(status) {
