@@ -721,268 +721,539 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
   }
 
+  // Widget _buildChatCard(
+  //   BuildContext context, {
+  //   required Map<String, dynamic> chat,
+  //   required bool isDarkMode,
+  // }) {
+  //   final statusColor = _getStatusColor(chat['status'] ?? 'Available');
+  //   final unreadCount = chat['unreadCount'] ?? 0;
+  //   final lastMessage = chat['lastMessage'] ?? {};
+  //   final lastMessageText = lastMessage['text'] ?? 'No messages yet';
+  //   final lastMessageTime = lastMessage['timestamp'] != null
+  //       ? _formatTime(lastMessage['timestamp'])
+  //       : '';
+    
+  //   final otherUser = chat['otherUser'] ?? {};
+  //   final otherUserName = otherUser['name'] ?? 'User';
+  //   final otherUserImage = otherUser['image'] ?? '';
+    
+  //   return GestureDetector(
+  //     onTap: () {
+  //       _navigateToChat(
+  //         chatId: chat['id'],
+  //         userName: otherUserName,
+  //         userImage: otherUserImage,
+  //         itemName: chat['itemName'] ?? 'Produce',
+  //         productId: chat['productId'],
+  //         productStatus: chat['status'],
+  //         quantity: chat['quantity'] ?? 0,
+  //         recipientId: otherUser['id'],
+  //       );
+  //     },
+  //     child: Container(
+  //       margin: const EdgeInsets.only(bottom: 12),
+  //       padding: const EdgeInsets.all(16),
+  //       decoration: BoxDecoration(
+  //         color: isDarkMode ? const Color(0xFF1F2E23) : Colors.white,
+  //         borderRadius: BorderRadius.circular(12),
+  //         border: Border.all(
+  //           color: unreadCount > 0
+  //               ? const Color(0xFF29A366).withOpacity(0.5)
+  //               : (isDarkMode ? const Color(0xFF2D3F32) : const Color(0xFFE8EEEB)),
+  //           width: unreadCount > 0 ? 2 : 1,
+  //         ),
+  //         boxShadow: [
+  //           BoxShadow(
+  //             color: Colors.black.withOpacity(0.05),
+  //             blurRadius: 20,
+  //             offset: const Offset(0, 4),
+  //           ),
+  //         ],
+  //       ),
+  //       child: Row(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           // User Avatar with Status Indicator
+  //           Stack(
+  //             children: [
+  //               Container(
+  //                 width: 56,
+  //                 height: 56,
+  //                 decoration: BoxDecoration(
+  //                   shape: BoxShape.circle,
+  //                   border: Border.all(
+  //                     color: statusColor,
+  //                     width: 3,
+  //                   ),
+  //                   image: otherUserImage.isNotEmpty
+  //                       ? DecorationImage(
+  //                           image: NetworkImage(otherUserImage),
+  //                           fit: BoxFit.cover,
+  //                         )
+  //                       : null,
+  //                   color: statusColor.withOpacity(0.1),
+  //                 ),
+  //                 child: otherUserImage.isEmpty
+  //                     ? Center(
+  //                         child: Text(
+  //                           otherUserName.isNotEmpty ? otherUserName[0].toUpperCase() : '?',
+  //                           style: TextStyle(
+  //                             color: statusColor,
+  //                             fontSize: 20,
+  //                             fontWeight: FontWeight.bold,
+  //                           ),
+  //                         ),
+  //                       )
+  //                     : null,
+  //               ),
+  //               if (chat['quantity'] != null && chat['quantity'] > 0)
+  //                 Positioned(
+  //                   bottom: 0,
+  //                   right: 0,
+  //                   child: Container(
+  //                     padding: const EdgeInsets.all(2),
+  //                     decoration: const BoxDecoration(
+  //                       color: Colors.white,
+  //                       shape: BoxShape.circle,
+  //                     ),
+  //                     child: Container(
+  //                       width: 12,
+  //                       height: 12,
+  //                       decoration: const BoxDecoration(
+  //                         color: Color(0xFF29A366),
+  //                         shape: BoxShape.circle,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //               if (unreadCount > 0)
+  //                 Positioned(
+  //                   top: 0,
+  //                   right: 0,
+  //                   child: Container(
+  //                     width: 20,
+  //                     height: 20,
+  //                     decoration: BoxDecoration(
+  //                       color: Colors.red,
+  //                       shape: BoxShape.circle,
+  //                       border: Border.all(
+  //                         color: isDarkMode ? const Color(0xFF1F2E23) : Colors.white,
+  //                         width: 2,
+  //                       ),
+  //                     ),
+  //                     child: Center(
+  //                       child: Text(
+  //                         unreadCount > 9 ? '9+' : '$unreadCount',
+  //                         style: const TextStyle(
+  //                           color: Colors.white,
+  //                           fontSize: 10,
+  //                           fontWeight: FontWeight.bold,
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //             ],
+  //           ),
+  //           const SizedBox(width: 16),
+            
+  //           // Chat Details
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Row(
+  //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                   children: [
+  //                     Expanded(
+  //                       child: Text(
+  //                         chat['itemName'] ?? 'Produce',
+  //                         style: const TextStyle(
+  //                           fontSize: 18,
+  //                           fontWeight: FontWeight.bold,
+  //                           color: Color(0xFF29A366),
+  //                         ),
+  //                         maxLines: 1,
+  //                         overflow: TextOverflow.ellipsis,
+  //                       ),
+  //                     ),
+  //                     Container(
+  //                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+  //                       decoration: BoxDecoration(
+  //                         color: statusColor.withOpacity(0.15),
+  //                         borderRadius: BorderRadius.circular(12),
+  //                         border: Border.all(
+  //                           color: statusColor.withOpacity(0.2),
+  //                         ),
+  //                       ),
+  //                       child: Row(
+  //                         mainAxisSize: MainAxisSize.min,
+  //                         children: [
+  //                           if (chat['quantity'] != null && chat['quantity'] > 0)
+  //                             Padding(
+  //                               padding: const EdgeInsets.only(right: 4),
+  //                               child: Text(
+  //                                 '${chat['quantity']} ${chat['quantityUnit'] ?? 'pcs'} •',
+  //                                 style: TextStyle(
+  //                                   fontSize: 8,
+  //                                   color: statusColor,
+  //                                 ),
+  //                               ),
+  //                             ),
+  //                           Text(
+  //                             chat['status'] ?? 'Available',
+  //                             style: TextStyle(
+  //                               fontSize: 10,
+  //                               fontWeight: FontWeight.bold,
+  //                               color: statusColor,
+  //                               letterSpacing: 0.5,
+  //                             ),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //                 const SizedBox(height: 4),
+  //                 Text(
+  //                   otherUserName,
+  //                   style: TextStyle(
+  //                     fontSize: 14,
+  //                     fontWeight: FontWeight.w600,
+  //                     color: isDarkMode ? Colors.white : const Color(0xFF101914),
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 4),
+  //                 Text(
+  //                   lastMessageText,
+  //                   style: TextStyle(
+  //                     fontSize: 14,
+  //                     color: unreadCount > 0 
+  //                         ? (isDarkMode ? Colors.white : const Color(0xFF101914))
+  //                         : const Color(0xFF578E73),
+  //                     fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
+  //                     height: 1.4,
+  //                   ),
+  //                   maxLines: 2,
+  //                   overflow: TextOverflow.ellipsis,
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+            
+  //           // Time
+  //           Padding(
+  //             padding: const EdgeInsets.only(left: 8),
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.end,
+  //               children: [
+  //                 Text(
+  //                   lastMessageTime,
+  //                   style: TextStyle(
+  //                     fontSize: 11,
+  //                     fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.w500,
+  //                     color: unreadCount > 0
+  //                         ? const Color(0xFF29A366)
+  //                         : const Color(0xFF578E73).withOpacity(0.6),
+  //                   ),
+  //                 ),
+  //                 if (chat['quantity'] == 0)
+  //                   Container(
+  //                     margin: const EdgeInsets.only(top: 4),
+  //                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+  //                     decoration: BoxDecoration(
+  //                       color: const Color(0xFF668799).withOpacity(0.1),
+  //                       borderRadius: BorderRadius.circular(4),
+  //                     ),
+  //                     child: const Text(
+  //                       'Claimed',
+  //                       style: TextStyle(
+  //                         fontSize: 8,
+  //                         fontWeight: FontWeight.bold,
+  //                         color: Color(0xFF668799),
+  //                       ),
+  //                     ),
+  //                   ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+
+
+
   Widget _buildChatCard(
-    BuildContext context, {
-    required Map<String, dynamic> chat,
-    required bool isDarkMode,
-  }) {
-    final statusColor = _getStatusColor(chat['status'] ?? 'Available');
-    final unreadCount = chat['unreadCount'] ?? 0;
-    final lastMessage = chat['lastMessage'] ?? {};
-    final lastMessageText = lastMessage['text'] ?? 'No messages yet';
-    final lastMessageTime = lastMessage['timestamp'] != null
-        ? _formatTime(lastMessage['timestamp'])
-        : '';
-    
-    final otherUser = chat['otherUser'] ?? {};
-    final otherUserName = otherUser['name'] ?? 'User';
-    final otherUserImage = otherUser['image'] ?? '';
-    
-    return GestureDetector(
-      onTap: () {
-        _navigateToChat(
-          chatId: chat['id'],
-          userName: otherUserName,
-          userImage: otherUserImage,
-          itemName: chat['itemName'] ?? 'Produce',
-          productId: chat['productId'],
-          productStatus: chat['status'],
-          quantity: chat['quantity'] ?? 0,
-          recipientId: otherUser['id'],
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF1F2E23) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: unreadCount > 0
-                ? const Color(0xFF29A366).withOpacity(0.5)
-                : (isDarkMode ? const Color(0xFF2D3F32) : const Color(0xFFE8EEEB)),
-            width: unreadCount > 0 ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
+  BuildContext context, {
+  required Map<String, dynamic> chat,
+  required bool isDarkMode,
+}) {
+  final statusColor = _getStatusColor(chat['status'] ?? 'Available');
+  final unreadCount = chat['unreadCount'] ?? 0;
+  final lastMessage = chat['lastMessage'] ?? {};
+  final lastMessageText = lastMessage['text']?.toString() ?? 'No messages yet';
+  
+  String lastMessageTime = '';
+  if (lastMessage['timestamp'] != null) {
+    final timestamp = lastMessage['timestamp'].toString();
+    if (timestamp.isNotEmpty) {
+      lastMessageTime = _formatTime(timestamp);
+    }
+  }
+  
+  final otherUser = chat['otherUser'] ?? {};
+  final otherUserName = otherUser['name']?.toString() ?? 'User';
+  final otherUserImage = otherUser['image']?.toString() ?? '';
+  
+  return GestureDetector(
+    onTap: () {
+      _navigateToChat(
+        chatId: chat['id']?.toString(),
+        userName: otherUserName,
+        userImage: otherUserImage,
+        itemName: chat['itemName']?.toString() ?? 'Produce',
+        productId: chat['productId']?.toString(),
+        productStatus: chat['status']?.toString(),
+        quantity: chat['quantity'] ?? 0,
+        recipientId: otherUser['id']?.toString(),
+      );
+    },
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF1F2E23) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: unreadCount > 0
+              ? const Color(0xFF29A366).withOpacity(0.5)
+              : (isDarkMode ? const Color(0xFF2D3F32) : const Color(0xFFE8EEEB)),
+          width: unreadCount > 0 ? 2 : 1,
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // User Avatar with Status Indicator
-            Stack(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: statusColor,
-                      width: 3,
-                    ),
-                    image: otherUserImage.isNotEmpty
-                        ? DecorationImage(
-                            image: NetworkImage(otherUserImage),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                    color: statusColor.withOpacity(0.1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // User Avatar with Status Indicator
+          Stack(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: statusColor,
+                    width: 3,
                   ),
-                  child: otherUserImage.isEmpty
-                      ? Center(
-                          child: Text(
-                            otherUserName.isNotEmpty ? otherUserName[0].toUpperCase() : '?',
-                            style: TextStyle(
-                              color: statusColor,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                  image: otherUserImage.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(otherUserImage),
+                          fit: BoxFit.cover,
                         )
                       : null,
+                  color: statusColor.withOpacity(0.1),
                 ),
-                if (chat['quantity'] != null && chat['quantity'] > 0)
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF29A366),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                  ),
-                if (unreadCount > 0)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isDarkMode ? const Color(0xFF1F2E23) : Colors.white,
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
+                child: otherUserImage.isEmpty
+                    ? Center(
                         child: Text(
-                          unreadCount > 9 ? '9+' : '$unreadCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
+                          otherUserName.isNotEmpty ? otherUserName[0].toUpperCase() : '?',
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                      )
+                    : null,
+              ),
+              if (chat['quantity'] != null && chat['quantity'] > 0)
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF29A366),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ),
+              if (unreadCount > 0)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDarkMode ? const Color(0xFF1F2E23) : Colors.white,
+                        width: 2,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        unreadCount > 9 ? '9+' : '$unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          
+          // Chat Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        chat['itemName']?.toString() ?? 'Produce',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF29A366),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: statusColor.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (chat['quantity'] != null && chat['quantity'] > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: Text(
+                                '${chat['quantity']} ${chat['quantityUnit'] ?? 'pcs'} •',
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ),
+                          Text(
+                            chat['status']?.toString() ?? 'Available',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: statusColor,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  otherUserName,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDarkMode ? Colors.white : const Color(0xFF101914),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  lastMessageText,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: unreadCount > 0 
+                        ? (isDarkMode ? Colors.white : const Color(0xFF101914))
+                        : const Color(0xFF578E73),
+                    fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
+                    height: 1.4,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          
+          // Time
+          Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  lastMessageTime,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.w500,
+                    color: unreadCount > 0
+                        ? const Color(0xFF29A366)
+                        : const Color(0xFF578E73).withOpacity(0.6),
+                  ),
+                ),
+                if (chat['quantity'] == 0)
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF668799).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'Claimed',
+                      style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF668799),
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(width: 16),
-            
-            // Chat Details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          chat['itemName'] ?? 'Produce',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF29A366),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: statusColor.withOpacity(0.2),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (chat['quantity'] != null && chat['quantity'] > 0)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 4),
-                                child: Text(
-                                  '${chat['quantity']} ${chat['quantityUnit'] ?? 'pcs'} •',
-                                  style: TextStyle(
-                                    fontSize: 8,
-                                    color: statusColor,
-                                  ),
-                                ),
-                              ),
-                            Text(
-                              chat['status'] ?? 'Available',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: statusColor,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    otherUserName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isDarkMode ? Colors.white : const Color(0xFF101914),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    lastMessageText,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: unreadCount > 0 
-                          ? (isDarkMode ? Colors.white : const Color(0xFF101914))
-                          : const Color(0xFF578E73),
-                      fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
-                      height: 1.4,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            
-            // Time
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    lastMessageTime,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.w500,
-                      color: unreadCount > 0
-                          ? const Color(0xFF29A366)
-                          : const Color(0xFF578E73).withOpacity(0.6),
-                    ),
-                  ),
-                  if (chat['quantity'] == 0)
-                    Container(
-                      margin: const EdgeInsets.only(top: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF668799).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'Claimed',
-                        style: TextStyle(
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF668799),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+  
 
   void _showNewMessageDialog(BuildContext context) {
     showDialog(
