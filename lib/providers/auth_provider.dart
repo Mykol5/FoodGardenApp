@@ -12,37 +12,28 @@ class AuthProvider with ChangeNotifier {
   String? get error => _error;
   Map<String, dynamic>? get currentUser => _currentUser;
   bool get isAuthenticated => _apiService.isLoggedIn;
+  
+  // ADD THESE GETTERS
+  String? get token => _apiService.token;
+  String? get userId => _currentUser?['id'];
 
   // Initialize auth state
-  // Future<void> initialize() async {
-  //   await _apiService.initialize();
+  Future<void> initialize() async {
+    print('🔄 Initializing AuthProvider...');
+    await _apiService.initialize();
     
-  //   if (_apiService.isLoggedIn) {
-  //     await _loadCurrentUser();
-  //   }
+    print('🔑 ApiService isLoggedIn: ${_apiService.isLoggedIn}');
+    print('🔑 ApiService token: ${_apiService.token?.substring(0, 50)}...');
     
-  //   notifyListeners();
-  // }
-
-
-  // In AuthProvider, update the initialize method:
-Future<void> initialize() async {
-  print('🔄 Initializing AuthProvider...');
-  await _apiService.initialize();
-  
-  print('🔑 ApiService isLoggedIn: ${_apiService.isLoggedIn}');
-  print('🔑 ApiService token: ${_apiService.token?.substring(0, 50)}...');
-  
-  if (_apiService.isLoggedIn) {
-    print('👤 User is logged in, loading user data...');
-    await _loadCurrentUser();
-  } else {
-    print('👤 No user logged in');
+    if (_apiService.isLoggedIn) {
+      print('👤 User is logged in, loading user data...');
+      await _loadCurrentUser();
+    } else {
+      print('👤 No user logged in');
+    }
+    
+    notifyListeners();
   }
-  
-  notifyListeners();
-}
-  
 
   // Load current user from API
   Future<void> _loadCurrentUser() async {
@@ -91,103 +82,63 @@ Future<void> initialize() async {
     }
   }
 
-  // Register method
-  // Future<Map<String, dynamic>> register({
-  //   required String email,
-  //   required String password,
-  //   required String name,
-  //   required String phone,
-  // }) async {
-  //   _isLoading = true;
-  //   _error = null;
-  //   notifyListeners();
-
-  //   try {
-  //     final result = await _apiService.register(
-  //       email: email,
-  //       password: password,
-  //       name: name,
-  //       phone: phone,
-  //     );
-
-  //     if (result['success'] == true) {
-  //       _currentUser = result['user'];
-  //       _error = null;
-  //       notifyListeners();
-  //       return {'success': true, 'user': result['user']};
-  //     } else {
-  //       _error = result['error'] ?? 'Registration failed';
-  //       notifyListeners();
-  //       return {'success': false, 'error': _error};
-  //     }
-  //   } catch (e) {
-  //     _error = 'An error occurred: $e';
-  //     notifyListeners();
-  //     return {'success': false, 'error': _error};
-  //   } finally {
-  //     _isLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
-
-
   // Register method - UPDATED VERSION
-Future<Map<String, dynamic>> register({
-  required String email,
-  required String password,
-  required String name,
-  required String phone,
-}) async {
-  _isLoading = true;
-  _error = null;
-  notifyListeners();
+  Future<Map<String, dynamic>> register({
+    required String email,
+    required String password,
+    required String name,
+    required String phone,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
 
-  try {
-    final result = await _apiService.register(
-      email: email,
-      password: password,
-      name: name,
-      phone: phone,
-    );
+    try {
+      final result = await _apiService.register(
+        email: email,
+        password: password,
+        name: name,
+        phone: phone,
+      );
 
-    if (result['success'] == true) {
-      print('✅ Registration successful, setting user data...');
-      _currentUser = result['user'];
-      _error = null;
-      
-      // IMPORTANT: After registration, we need to re-initialize ApiService
-      // to load the new token that was just saved
-      await _apiService.initialize(); // This will load the new token
-      
-      // Now check if we're authenticated
-      print('🔑 After registration - isLoggedIn: ${_apiService.isLoggedIn}');
-      print('🔑 After registration - token: ${_apiService.token?.substring(0, 30)}...');
-      
-      // Also load the current user data
-      if (_apiService.isLoggedIn) {
-        await _loadCurrentUser();
+      if (result['success'] == true) {
+        print('✅ Registration successful, setting user data...');
+        _currentUser = result['user'];
+        _error = null;
+        
+        // IMPORTANT: After registration, we need to re-initialize ApiService
+        // to load the new token that was just saved
+        await _apiService.initialize(); // This will load the new token
+        
+        // Now check if we're authenticated
+        print('🔑 After registration - isLoggedIn: ${_apiService.isLoggedIn}');
+        print('🔑 After registration - token: ${_apiService.token?.substring(0, 30)}...');
+        
+        // Also load the current user data
+        if (_apiService.isLoggedIn) {
+          await _loadCurrentUser();
+        }
+        
+        notifyListeners();
+        return {
+          'success': true, 
+          'user': result['user'],
+          'message': result['message'] ?? 'Registration successful',
+        };
+      } else {
+        _error = result['error'] ?? 'Registration failed';
+        notifyListeners();
+        return {'success': false, 'error': _error};
       }
-      
-      notifyListeners();
-      return {
-        'success': true, 
-        'user': result['user'],
-        'message': result['message'] ?? 'Registration successful',
-      };
-    } else {
-      _error = result['error'] ?? 'Registration failed';
+    } catch (e) {
+      _error = 'An error occurred: $e';
       notifyListeners();
       return {'success': false, 'error': _error};
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-  } catch (e) {
-    _error = 'An error occurred: $e';
-    notifyListeners();
-    return {'success': false, 'error': _error};
-  } finally {
-    _isLoading = false;
-    notifyListeners();
   }
-}
 
   // Logout method
   Future<void> logout() async {
