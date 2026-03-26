@@ -953,6 +953,376 @@ class ApiService {
     }
   }
 
+  // ============ CHAT METHODS ============
+
+  Future<Map<String, dynamic>> getUserChats() async {
+    try {
+      print('🔄 Getting user chats');
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/chats'),
+        headers: headers,
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('❌ Error getting chats: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getChatMessages(String chatId) async {
+    try {
+      print('🔄 Getting chat messages for $chatId');
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/chats/$chatId/messages'),
+        headers: headers,
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('❌ Error getting messages: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> sendMessage({
+    required String chatId,
+    required String recipientId,
+    required String text,
+    String? productId,
+  }) async {
+    try {
+      print('🔄 Sending message to $recipientId');
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/messages'),
+        headers: headers,
+        body: jsonEncode({
+          'chatId': chatId,
+          'recipientId': recipientId,
+          'text': text,
+          'productId': productId,
+        }),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('❌ Error sending message: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> markMessagesAsRead(String chatId, List<String> messageIds) async {
+    try {
+      print('🔄 Marking messages as read in $chatId');
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/chats/$chatId/read'),
+        headers: headers,
+        body: jsonEncode({'messageIds': messageIds}),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('❌ Error marking messages as read: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> createOrGetChat({
+    required String recipientId,
+    String? productId,
+  }) async {
+    try {
+      print('🔄 Creating or getting chat with recipient: $recipientId');
+      
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/chats'),
+        headers: headers,
+        body: jsonEncode({
+          'recipientId': recipientId,
+          'productId': productId,
+        }),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'chat': data['chat'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Failed to create chat',
+        };
+      }
+    } catch (e) {
+      print('❌ Create chat error: $e');
+      return {
+        'success': false,
+        'error': 'Connection error: $e',
+      };
+    }
+  }
+
+  // ============ QUESTIONS & ANSWERS METHODS ============
+
+  // Get all questions with optional filters
+  Future<Map<String, dynamic>> getCropQuestions({
+    String? category,
+    String? search,
+    bool? solved,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    try {
+      print('🔄 Getting crop questions');
+      
+      // Build query parameters
+      final Map<String, String> queryParams = {};
+      if (category != null && category != 'All') queryParams['category'] = category;
+      if (search != null && search.isNotEmpty) queryParams['search'] = search;
+      if (solved != null) queryParams['solved'] = solved.toString();
+      queryParams['limit'] = limit.toString();
+      queryParams['offset'] = offset.toString();
+      
+      final uri = Uri.parse('$baseUrl/api/questions').replace(queryParameters: queryParams);
+      print('🌐 URL: $uri');
+      
+      final response = await http.get(
+        uri,
+        headers: headers,
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('❌ Get crop questions error: $e');
+      return {
+        'success': false,
+        'error': 'Connection error: $e',
+        'questions': [],
+      };
+    }
+  }
+
+  // Get a single question with its answers
+  Future<Map<String, dynamic>> getQuestionWithAnswers(String questionId) async {
+    try {
+      print('🔄 Getting question details for: $questionId');
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/questions/$questionId'),
+        headers: headers,
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('❌ Get question details error: $e');
+      return {
+        'success': false,
+        'error': 'Connection error: $e',
+      };
+    }
+  }
+
+  // Post a new question
+  Future<Map<String, dynamic>> postCropQuestion({
+    required String title,
+    String? description,
+    required String category,
+    String? imageUrl,
+  }) async {
+    try {
+      print('🔄 Posting new question');
+      print('📤 Title: $title');
+      print('📤 Category: $category');
+      
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/questions'),
+        headers: headers,
+        body: jsonEncode({
+          'title': title,
+          'description': description ?? '',
+          'category': category,
+          'image_url': imageUrl,
+        }),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('❌ Post crop question error: $e');
+      return {
+        'success': false,
+        'error': 'Connection error: $e',
+      };
+    }
+  }
+
+  // Post an answer to a question
+  Future<Map<String, dynamic>> postAnswer({
+    required String questionId,
+    required String text,
+  }) async {
+    try {
+      print('🔄 Posting answer to question: $questionId');
+      print('📤 Answer: $text');
+      
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/questions/$questionId/answers'),
+        headers: headers,
+        body: jsonEncode({'text': text}),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('❌ Post answer error: $e');
+      return {
+        'success': false,
+        'error': 'Connection error: $e',
+      };
+    }
+  }
+
+  // Get answers for a specific question
+  Future<Map<String, dynamic>> getQuestionAnswers(String questionId) async {
+    try {
+      print('🔄 Getting answers for question: $questionId');
+      
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/questions/$questionId'),
+        headers: headers,
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      final data = jsonDecode(response.body);
+      
+      if (data['success'] == true && data['question'] != null) {
+        return {
+          'success': true,
+          'answers': data['question']['answers'] ?? [],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Failed to get answers',
+        };
+      }
+    } catch (e) {
+      print('❌ Get answers error: $e');
+      return {
+        'success': false,
+        'error': 'Connection error: $e',
+      };
+    }
+  }
+
+  // Like/Unlike a question
+  Future<Map<String, dynamic>> likeQuestion(String questionId, bool like) async {
+    try {
+      print('🔄 ${like ? 'Liking' : 'Unliking'} question: $questionId');
+      
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/questions/$questionId'),
+        headers: headers,
+        body: jsonEncode({'likes': like ? 1 : -1}),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('❌ Like question error: $e');
+      return {
+        'success': false,
+        'error': 'Connection error: $e',
+      };
+    }
+  }
+
+  // Mark a question as solved
+  Future<Map<String, dynamic>> markQuestionSolved(String questionId) async {
+    try {
+      print('🔄 Marking question as solved: $questionId');
+      
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/questions/$questionId'),
+        headers: headers,
+        body: jsonEncode({'solved': true}),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('❌ Mark question solved error: $e');
+      return {
+        'success': false,
+        'error': 'Connection error: $e',
+      };
+    }
+  }
+
+  // Like/Unlike an answer
+  Future<Map<String, dynamic>> likeAnswer(String answerId, bool like) async {
+    try {
+      print('🔄 ${like ? 'Liking' : 'Unliking'} answer: $answerId');
+      
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/answers/$answerId/like'),
+        headers: headers,
+        body: jsonEncode({'like': like}),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('❌ Like answer error: $e');
+      return {
+        'success': false,
+        'error': 'Connection error: $e',
+      };
+    }
+  }
+
+  // Accept an answer as solution
+  Future<Map<String, dynamic>> acceptAnswer(String answerId) async {
+    try {
+      print('🔄 Accepting answer as solution: $answerId');
+      
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/answers/$answerId/accept'),
+        headers: headers,
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('❌ Accept answer error: $e');
+      return {
+        'success': false,
+        'error': 'Connection error: $e',
+      };
+    }
+  }
+
   // ============ OTHER METHODS ============
 
   Future<Map<String, dynamic>> logout() async {
@@ -1062,148 +1432,6 @@ class ApiService {
     
     return true;
   }
-
-
-Future<Map<String, dynamic>> getUserChats() async {
-  try {
-    print('🔄 Getting user chats');
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/chats'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
-  } catch (e) {
-    print('❌ Error getting chats: $e');
-    return {'success': false, 'error': e.toString()};
-  }
-}
-
-Future<Map<String, dynamic>> getChatMessages(String chatId) async {
-  try {
-    print('🔄 Getting chat messages for $chatId');
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/chats/$chatId/messages'),
-      headers: headers,
-    );
-    return jsonDecode(response.body);
-  } catch (e) {
-    print('❌ Error getting messages: $e');
-    return {'success': false, 'error': e.toString()};
-  }
-}
-
-Future<Map<String, dynamic>> sendMessage({
-  required String chatId,
-  required String recipientId,
-  required String text,
-  String? productId,
-}) async {
-  try {
-    print('🔄 Sending message to $recipientId');
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/messages'),
-      headers: headers,
-      body: jsonEncode({
-        'chatId': chatId,
-        'recipientId': recipientId,
-        'text': text,
-        'productId': productId,
-      }),
-    );
-    return jsonDecode(response.body);
-  } catch (e) {
-    print('❌ Error sending message: $e');
-    return {'success': false, 'error': e.toString()};
-  }
-}
-
-Future<Map<String, dynamic>> markMessagesAsRead(String chatId, List<String> messageIds) async {
-  try {
-    print('🔄 Marking messages as read in $chatId');
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/chats/$chatId/read'),
-      headers: headers,
-      body: jsonEncode({'messageIds': messageIds}),
-    );
-    return jsonDecode(response.body);
-  } catch (e) {
-    print('❌ Error marking messages as read: $e');
-    return {'success': false, 'error': e.toString()};
-  }
-}
-
-
-  // Add to your ApiService class
-Future<Map<String, dynamic>> createOrGetChat({
-  required String recipientId,
-  String? productId,
-}) async {
-  try {
-    print('🔄 Creating or getting chat with recipient: $recipientId');
-    
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/chats'),
-      headers: headers,
-      body: jsonEncode({
-        'recipientId': recipientId,
-        'productId': productId,
-      }),
-    );
-
-    print('📥 Response status: ${response.statusCode}');
-    print('📥 Response body: ${response.body}');
-
-    final Map<String, dynamic> data = jsonDecode(response.body);
-
-    if (response.statusCode == 200 && data['success'] == true) {
-      return {
-        'success': true,
-        'chat': data['chat'],
-      };
-    } else {
-      return {
-        'success': false,
-        'error': data['error'] ?? 'Failed to create chat',
-      };
-    }
-  } catch (e) {
-    print('❌ Create chat error: $e');
-    return {
-      'success': false,
-      'error': 'Connection error: $e',
-    };
-  }
-}
-
-
-
-  Future<Map<String, dynamic>> getCropQuestions() async {
-  final response = await http.get(
-    Uri.parse('$baseUrl/api/questions'),
-    headers: headers,
-  );
-  return jsonDecode(response.body);
-}
-
-Future<Map<String, dynamic>> postCropQuestion(Map<String, dynamic> data) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/api/questions'),
-    headers: headers,
-    body: jsonEncode(data),
-  );
-  return jsonDecode(response.body);
-}
-
-Future<Map<String, dynamic>> postAnswer(String questionId, String answer) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/api/questions/$questionId/answers'),
-    headers: headers,
-    body: jsonEncode({'answer': answer}),
-  );
-  return jsonDecode(response.body);
-}
-
-  
 
   // ============ HTTP METHODS ============
 
