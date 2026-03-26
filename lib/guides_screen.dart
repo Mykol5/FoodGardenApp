@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';  // ADDED: Required for Uint8List
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -95,7 +96,7 @@ class _GuidesScreenState extends State<GuidesScreen> {
         'color': '#2C3E5C',
         'description': 'Extreme cold, very short growing season',
         'suitableCrops': ['Potatoes', 'Kale', 'Carrots', 'Turnips'],
-        'bounds': const LatLngBounds(
+        'bounds': LatLngBounds(  // FIXED: Removed 'const'
           southwest: LatLng(70, -180),
           northeast: LatLng(60, -50),
         ),
@@ -106,7 +107,7 @@ class _GuidesScreenState extends State<GuidesScreen> {
         'color': '#3E5A8A',
         'description': 'Very cold, short growing season',
         'suitableCrops': ['Potatoes', 'Cabbage', 'Peas', 'Radishes'],
-        'bounds': const LatLngBounds(
+        'bounds': LatLngBounds(  // FIXED: Removed 'const'
           southwest: LatLng(60, -180),
           northeast: LatLng(55, -50),
         ),
@@ -117,7 +118,7 @@ class _GuidesScreenState extends State<GuidesScreen> {
         'color': '#4F7AB3',
         'description': 'Cold winters, moderate summers',
         'suitableCrops': ['Broccoli', 'Cauliflower', 'Lettuce', 'Spinach'],
-        'bounds': const LatLngBounds(
+        'bounds': LatLngBounds(  // FIXED: Removed 'const'
           southwest: LatLng(55, -180),
           northeast: LatLng(50, -50),
         ),
@@ -128,7 +129,7 @@ class _GuidesScreenState extends State<GuidesScreen> {
         'color': '#609CD9',
         'description': 'Cold climate, good for hardy vegetables',
         'suitableCrops': ['Tomatoes', 'Peppers', 'Beans', 'Corn'],
-        'bounds': const LatLngBounds(
+        'bounds': LatLngBounds(  // FIXED: Removed 'const'
           southwest: LatLng(50, -180),
           northeast: LatLng(45, -50),
         ),
@@ -139,7 +140,7 @@ class _GuidesScreenState extends State<GuidesScreen> {
         'color': '#71BDFF',
         'description': 'Temperate, diverse growing options',
         'suitableCrops': ['Apples', 'Cherries', 'Peaches', 'Grapes'],
-        'bounds': const LatLngBounds(
+        'bounds': LatLngBounds(  // FIXED: Removed 'const'
           southwest: LatLng(45, -180),
           northeast: LatLng(40, -50),
         ),
@@ -150,7 +151,7 @@ class _GuidesScreenState extends State<GuidesScreen> {
         'color': '#8ACC66',
         'description': 'Mild winters, long growing season',
         'suitableCrops': ['Strawberries', 'Blueberries', 'Raspberries'],
-        'bounds': const LatLngBounds(
+        'bounds': LatLngBounds(  // FIXED: Removed 'const'
           southwest: LatLng(40, -180),
           northeast: LatLng(35, -50),
         ),
@@ -161,7 +162,7 @@ class _GuidesScreenState extends State<GuidesScreen> {
         'color': '#A5D95E',
         'description': 'Warm, excellent for fruit trees',
         'suitableCrops': ['Citrus', 'Figs', 'Pomegranates', 'Olives'],
-        'bounds': const LatLngBounds(
+        'bounds': LatLngBounds(  // FIXED: Removed 'const'
           southwest: LatLng(35, -180),
           northeast: LatLng(30, -50),
         ),
@@ -172,7 +173,7 @@ class _GuidesScreenState extends State<GuidesScreen> {
         'color': '#BFF055',
         'description': 'Warm, subtropical plants thrive',
         'suitableCrops': ['Avocados', 'Bananas', 'Mangoes', 'Papayas'],
-        'bounds': const LatLngBounds(
+        'bounds': LatLngBounds(  // FIXED: Removed 'const'
           southwest: LatLng(30, -180),
           northeast: LatLng(25, -50),
         ),
@@ -183,7 +184,7 @@ class _GuidesScreenState extends State<GuidesScreen> {
         'color': '#D9FF4C',
         'description': 'Hot, year-round growing possible',
         'suitableCrops': ['Tomatoes', 'Eggplant', 'Okra', 'Sweet Potatoes'],
-        'bounds': const LatLngBounds(
+        'bounds': LatLngBounds(  // FIXED: Removed 'const'
           southwest: LatLng(25, -180),
           northeast: LatLng(20, -50),
         ),
@@ -194,7 +195,7 @@ class _GuidesScreenState extends State<GuidesScreen> {
         'color': '#F2F242',
         'description': 'Tropical, year-round gardening',
         'suitableCrops': ['Pineapples', 'Coconuts', 'Tropical Fruits'],
-        'bounds': const LatLngBounds(
+        'bounds': LatLngBounds(  // FIXED: Removed 'const'
           southwest: LatLng(20, -180),
           northeast: LatLng(0, -50),
         ),
@@ -431,7 +432,7 @@ class _GuidesScreenState extends State<GuidesScreen> {
         'image_url': imageUrl,
       };
 
-      final result = await _apiService.postCropQuestion(questionData);
+      final result = await _apiService.postCropQuestion(questionData);  // FIXED: Passing questionData
       
       if (result['success'] == true && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -477,7 +478,7 @@ class _GuidesScreenState extends State<GuidesScreen> {
 
   Future<void> _postAnswer(String questionId, String answerText) async {
     try {
-      final result = await _apiService.postAnswer(questionId, answerText);
+      final result = await _apiService.postAnswer(questionId, answerText);  // FIXED: Passing both parameters
       
       if (result['success'] == true && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
