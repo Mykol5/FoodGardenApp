@@ -406,7 +406,7 @@ class _GuidesScreenState extends State<GuidesScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        Icons.map_off,
+                        Icons.map,
                         size: 50,
                         color: isDarkMode ? Colors.white54 : Colors.grey[600],
                       ),
