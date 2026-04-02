@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AIService {
   // Use Google's Gemini API (free tier available)
-  static const String _geminiApiKey = 'YOUR_GEMINI_API_KEY'; // Get from https://makersuite.google.com/app/apikey
+  static const String _geminiApiKey = 'AIzaSyCa-bwieSO8xd2T6mCUiEWm5Odv1ERssOw'; // Get from https://makersuite.google.com/app/apikey
   static const String _geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
   
   // Local training data storage
