@@ -855,221 +855,222 @@ class _AllCropsScreenState extends State<AllCropsScreen> {
     );
   }
 
-  Widget _buildCropListItem(
-    BuildContext context,
-    Map<String, dynamic> crop,
-    bool isDarkMode,
-  ) {
-    final String name = crop['name']?.toString() ?? 'Unnamed Crop';
-    final String status = crop['stage'] ?? crop['status'] ?? 'seedling';
-    final String variety = crop['variety']?.toString() ?? 'Unknown';
-    final String category = crop['category']?.toString() ?? 'vegetable';
-    final double progress = (crop['progress'] as num?)?.toDouble() ?? 0.0;
-    final String? imageUrl = crop['image_url']?.toString();
-    final int quantity = (crop['quantity'] as num?)?.toInt() ?? 1;
-    final String quantityUnit = crop['quantity_unit']?.toString() ?? 'plants';
-    final bool autoUpdateEnabled = crop['auto_update_enabled'] ?? true;
-    final int daysPlanted = crop['days_planted'] ?? 0;
-    final int daysToHarvest = crop['days_to_harvest'] ?? 90;
-    
-    final String statusColor = _getStatusColor(status);
-    final String statusLabel = _getStatusLabel(status);
+Widget _buildCropListItem(
+  BuildContext context,
+  Map<String, dynamic> crop,
+  bool isDarkMode,
+) {
+  final String name = crop['name']?.toString() ?? 'Unnamed Crop';
+  final String status = crop['stage'] ?? crop['status'] ?? 'seedling';
+  final String variety = crop['variety']?.toString() ?? 'Unknown';
+  final String category = crop['category']?.toString() ?? 'vegetable';
+  final double progress = (crop['progress'] as num?)?.toDouble() ?? 0.0;
+  final String? imageUrl = crop['image_url']?.toString();
+  final int quantity = (crop['quantity'] as num?)?.toInt() ?? 1;
+  final String quantityUnit = crop['quantity_unit']?.toString() ?? 'plants';
+  final bool autoUpdateEnabled = crop['auto_update_enabled'] ?? true;
+  final int daysPlanted = crop['days_planted'] ?? 0;
+  final int daysToHarvest = crop['days_to_harvest'] ?? 90;
+  
+  final String statusColor = _getStatusColor(status);
+  final String statusLabel = _getStatusLabel(status);
 
-    return GestureDetector(
-      onTap: () => _showManualProgressDialog(crop),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDarkMode ? Colors.black.withOpacity(0.3) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDarkMode ? const Color(0xFF2A3A35) : const Color(0xFFF0F2F1),
-          ),
+  return GestureDetector(
+    onTap: () => _showManualProgressDialog(crop),
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.black.withOpacity(0.3) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDarkMode ? const Color(0xFF2A3A35) : const Color(0xFFF0F2F1),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              margin: const EdgeInsets.only(right: 16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: const Color(0xFF19E6A2).withOpacity(0.1),
-              ),
-              child: imageUrl != null && imageUrl.isNotEmpty
-                  ? Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      width: 72,
-                      height: 72,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: const Color(0xFF19E6A2).withOpacity(0.1),
-                          child: const Center(
-                            child: Icon(
-                              Icons.eco,
-                              color: Color(0xFF19E6A2),
-                              size: 32,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFF19E6A2).withOpacity(0.1),
+            ),
+            child: imageUrl != null && imageUrl.isNotEmpty
+                ? Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    width: 72,
+                    height: 72,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: const Color(0xFF19E6A2).withOpacity(0.1),
+                        child: const Center(
+                          child: Icon(
+                            Icons.eco,
+                            color: Color(0xFF19E6A2),
+                            size: 32,
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : const Center(
+                    child: Icon(
+                      Icons.eco,
+                      color: Color(0xFF19E6A2),
+                      size: 32,
+                    ),
+                  ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              name,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isDarkMode ? Colors.white : const Color(0xFF0E1B17),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        );
-                      },
-                    )
-                  : const Center(
-                      child: Icon(
-                        Icons.eco,
-                        color: Color(0xFF19E6A2),
-                        size: 32,
+                          if (!autoUpdateEnabled)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'Manual',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                name,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDarkMode ? Colors.white : const Color(0xFF0E1B17),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (!autoUpdateEnabled)
-                              Container(
-                                margin: const EdgeInsets.only(left: 8),
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  'Manual',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.orange,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '$quantity $quantityUnit',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        statusLabel,
+                      child: Text(
+                        '$quantity $quantityUnit',
                         style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
                           color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))),
                         ),
                       ),
-                      if (autoUpdateEnabled && daysPlanted > 0) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'Day $daysPlanted/$daysToHarvest',
-                            style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${_capitalize(category)} • $variety',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF4E977F),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? const Color(0xFF2A3A35) : const Color(0xFFF0F2F1),
-                            borderRadius: BorderRadius.circular(4),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      statusLabel,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(int.parse(statusColor.replaceFirst('#', '0xFF'))),
+                      ),
+                    ),
+                    if (autoUpdateEnabled && daysPlanted > 0) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Day $daysPlanted/$daysToHarvest',
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
                           ),
-                          child: FractionallySizedBox(
-                            alignment: Alignment.centerLeft,
-                            widthFactor: progress / 100,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF19E6A2), Color(0xFF39AC86)],
-                                ),
-                                borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${_capitalize(category)} • $variety',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF4E977F),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? const Color(0xFF2A3A35) : const Color(0xFFF0F2F1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: progress / 100,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF19E6A2), Color(0xFF39AC86)],
                               ),
+                              borderRadius: BorderRadius.circular(4),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${progress.toInt()}%',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? const Color(0xFFA0B8AF) : const Color(0xFF0E1B17),
-                        ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${progress.toInt()}%',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isDarkMode ? const Color(0xFFA0B8AF) : const Color(0xFF0E1B17),
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            Icon(
-              autoUpdateEnabled ? Icons.edit : Icons.sliders,
-              color: const Color(0xFF4E977F),
-              size: 20,
-            ),
-          ],
-        ),
+          ),
+          // FIXED: Changed Icons.sliders to Icons.tune
+          Icon(
+            autoUpdateEnabled ? Icons.edit : Icons.tune,
+            color: const Color(0xFF4E977F),
+            size: 20,
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   String _getMonthAbbr(int month) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
