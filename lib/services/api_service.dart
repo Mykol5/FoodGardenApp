@@ -1585,6 +1585,121 @@ class ApiService {
     return true;
   }
 
+
+
+
+  // Create a product request
+Future<Map<String, dynamic>> createProductRequest({
+  required String productId,
+  required int quantity,
+  String? message,
+}) async {
+  try {
+    print('🔄 Creating product request for product: $productId');
+    print('📤 Quantity: $quantity');
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/products/$productId/request'),
+      headers: headers,
+      body: jsonEncode({
+        'quantity': quantity,
+        'message': message ?? '',
+      }),
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response body: ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      return {
+        'success': false,
+        'error': 'Failed to create request',
+        'statusCode': response.statusCode,
+      };
+    }
+  } catch (e) {
+    print('❌ Create product request error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+// Check if user has an existing request for a product
+Future<Map<String, dynamic>> getUserProductRequest(String productId) async {
+  try {
+    print('🔄 Checking existing request for product: $productId');
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/products/$productId/my-request'),
+      headers: headers,
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response body: ${response.body}');
+
+    return jsonDecode(response.body);
+  } catch (e) {
+    print('❌ Check request error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+// Accept a product request (for owner)
+Future<Map<String, dynamic>> acceptProductRequest(String requestId) async {
+  try {
+    print('🔄 Accepting product request: $requestId');
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/requests/$requestId/accept'),
+      headers: headers,
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response body: ${response.body}');
+
+    return jsonDecode(response.body);
+  } catch (e) {
+    print('❌ Accept request error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+// Decline a product request (for owner)
+Future<Map<String, dynamic>> declineProductRequest(String requestId) async {
+  try {
+    print('🔄 Declining product request: $requestId');
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/requests/$requestId/decline'),
+      headers: headers,
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response body: ${response.body}');
+
+    return jsonDecode(response.body);
+  } catch (e) {
+    print('❌ Decline request error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+
+  
+
   // ============ HTTP METHODS ============
 
   Future<Map<String, dynamic>> httpGet(String endpoint) async {
