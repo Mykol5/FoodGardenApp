@@ -1698,6 +1698,32 @@ Future<Map<String, dynamic>> declineProductRequest(String requestId) async {
 }
 
 
+
+// Get request details
+Future<Map<String, dynamic>> getRequestDetails(String requestId) async {
+  try {
+    print('🔄 Getting request details: $requestId');
+    
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/request/$requestId'),
+      headers: headers,
+    );
+
+    print('📥 Response status: ${response.statusCode}');
+    print('📥 Response body: ${response.body}');
+
+    return jsonDecode(response.body);
+  } catch (e) {
+    print('❌ Get request details error: $e');
+    return {
+      'success': false,
+      'error': 'Connection error: $e',
+    };
+  }
+}
+
+
+
   
 
   // ============ HTTP METHODS ============
