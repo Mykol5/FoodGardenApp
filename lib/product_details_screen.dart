@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
+import 'chat_screen.dart';
 import 'messages_screen.dart';
 import 'providers/auth_provider.dart';
 import 'services/api_service.dart';
